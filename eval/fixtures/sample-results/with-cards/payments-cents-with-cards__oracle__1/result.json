@@ -1,0 +1,18 @@
+{
+  "task_name": "payments-cents-with-cards",
+  "trial_name": "payments-cents-with-cards__oracle__1",
+  "agent_result": {
+    "n_input_tokens": 1200,
+    "n_output_tokens": 400,
+    "cost_usd": 0.012
+  },
+  "verifier_result": {
+    "rewards": { "reward": 1 }
+  },
+  "agent_execution": {
+    "started_at": "2026-08-07T10:00:00.000Z",
+    "finished_at": "2026-08-07T10:00:45.000Z"
+  },
+  "started_at": "2026-08-07T09:59:50.000Z",
+  "finished_at": "2026-08-07T10:00:50.000Z"
+}

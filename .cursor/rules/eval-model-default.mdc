@@ -1,0 +1,15 @@
+---
+description: Default model for Harbor knowledge-cards evals
+alwaysApply: true
+---
+
+# Eval model default
+
+When running or discussing the Harbor with/without knowledge-cards eval (`eval/`, `bun run eval:run`):
+
+- Default agent: `terminus-2`
+- Default model: `openai/gpt-5.6-luna` (GPT-5.6 Luna)
+- Default task for efficiency/cost A/B: `repo-map` (solvable both arms; card maps structure)
+- Use `payments-cents` when measuring correctness under a misleading README
+- Do not switch to gpt-4o-mini, Haiku, or other models unless the user asks
+- Oracle (`--agent oracle`) is fine for task sanity checks (no LLM model)

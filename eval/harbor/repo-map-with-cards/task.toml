@@ -1,0 +1,27 @@
+schema_version = "1.4"
+
+[task]
+name = "agent-knowledge-cards/repo-map-with-cards"
+version = "1.0.0"
+description = "Fix EU SKU prefix; structure card speeds discovery"
+authors = []
+keywords = ["knowledge-cards", "repo-map", "eval"]
+
+[metadata]
+category = "programming"
+difficulty = "easy"
+variant = "with-cards"
+tags = ["knowledge-cards", "ab-eval", "efficiency"]
+
+[verifier]
+timeout_sec = 180.0
+
+[agent]
+timeout_sec = 600.0
+
+[environment]
+build_timeout_sec = 600.0
+cpus = 1
+memory_mb = 2048
+storage_mb = 10240
+gpus = 0

@@ -8,7 +8,7 @@ Conventions for agents working in this repo.
 - `src/cli/` — thin CLI over core.
 - `src/mcp/` — MCP tool handlers (stdio server not wired yet).
 - `src/adapters/` — harness edges (hooks, inject helpers). Keep thin.
-- `eval/` — with/without cards A/B (**TODO**, fixtures only).
+- `eval/` — Harbor with/without cards A/B (`eval:prepare` / `eval:run` / `eval:compare`).
 - `tests/` — `bun:test`.
 
 ## Commands
@@ -18,6 +18,9 @@ bun install
 bun test
 bun run typecheck
 bun run kc status|query|propose|reflect
+bun run eval:prepare
+bun run eval:run -- --task repo-map --agent oracle
+bun run eval:run -- --task repo-map   # terminus-2 + openai/gpt-5.6-luna
 ```
 
 Use **bun**, not npm/pnpm/yarn/node for scripts.

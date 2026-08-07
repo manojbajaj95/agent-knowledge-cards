@@ -4,6 +4,9 @@ node_modules
 # local notebooks / runtime
 .knowledge-cards/
 
+# Harbor eval job outputs
+eval/jobs/
+
 # output
 out
 dist

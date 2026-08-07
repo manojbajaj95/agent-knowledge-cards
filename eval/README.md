@@ -1,22 +1,83 @@
-# Eval
+# Eval: with vs without knowledge cards
 
-Compare a coding agent **with** vs **without** pre-seeded knowledge cards on the same task.
+Harbor A/B: same coding task twice — once with a pre-seeded knowledge card injected into the instruction, once without. Compare **reward**, **cost_usd**, and **agent duration**.
 
-## Status
+Built on [Harbor](https://www.harborframework.com/).
 
-**TODO** — not runnable yet. Fixtures live under `fixtures/` for when the harness lands.
+Default agent/model: `terminus-2` + `openai/gpt-5.6-luna`.
 
-## Planned shape
+## Tasks
 
-1. Seed cards from `fixtures/sample-cards.json` (or task-specific fixtures).
-2. Run the same coding task twice:
-   - **with cards** — inject via `formatCardsForInject` / session-start adapter
-   - **without cards** — empty notebook / no inject
-3. Score outcomes (pass/fail, steps, tokens) and report the delta.
+| Task id | Goal of the card | Expected without-cards |
+|---------|------------------|------------------------|
+| `repo-map` (default) | Map live code path (`core/pipeline/steps/sku_normalize.py`); skip decoys | Still solvable, but more explore turns / tokens |
+| `payments-cents` | Correct money convention (integer cents) | Often fails if it trusts the misleading “dollars” README |
 
-## TODOs
+### `repo-map`
 
-- [ ] Pick a small coding task + sandbox repo
-- [ ] Scripted or LLM/Cursor-agent harness
-- [ ] CLI: `bun run eval -- with-cards | without-cards`
-- [ ] Capture artifacts (trace, final score)
+Fix EU SKU prefix (`WIDGET` → `EU-WIDGET`). The bug is findable without the card, but the card names the live file and warns that `legacy/` + `decoys/` are dead ends — so the win is **fewer tokens / turns / time**, not pass/fail.
+
+### `payments-cents`
+
+Fix `apply_discount` for integer cents. Environment README says dollars; the card says cents. Measures **correctness** under a misleading local doc.
+
+## Setup
+
+```bash
+uv tool install harbor   # https://www.harborframework.com/
+bun install
+bun run eval:prepare                 # all templates
+bun run eval:prepare -- repo-map     # one task
+```
+
+Oracle (no LLM API) sanity-check:
+
+```bash
+bun run eval:run -- --task repo-map --agent oracle
+```
+
+Real agent A/B (needs `OPENAI_API_KEY`):
+
+```bash
+bun run eval:run -- --task repo-map
+bun run eval:run -- --task payments-cents
+# both:
+bun run eval:run -- --task repo-map --task payments-cents
+```
+
+Jobs land in `eval/jobs/`. Compare two existing job dirs:
+
+```bash
+bun run eval:compare -- \
+  --with eval/jobs/<with-job> \
+  --without eval/jobs/<without-job> \
+  --out /tmp/ab.json
+```
+
+Inspect trajectories:
+
+```bash
+harbor view eval/jobs
+```
+
+## Layout
+
+```
+eval/
+  templates/<task-id>/   # instruction, cards.json, env, tests, solution
+  prepare.ts             # writes harbor/<task>-{with,without}-cards
+  run.ts                 # prepare → harbor run ×2 → compare
+  compare.ts / metrics.ts
+  fixtures/              # sample-cards + offline compare fixtures
+  harbor/                # generated dataset
+  jobs/                  # local Harbor outputs (gitignored)
+```
+
+## Offline check
+
+```bash
+bun test tests/eval.test.ts
+bun run eval:compare -- \
+  --with eval/fixtures/sample-results/with-cards \
+  --without eval/fixtures/sample-results/without-cards
+```

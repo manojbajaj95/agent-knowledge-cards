@@ -6,6 +6,8 @@ The design comes from the knowledge_cards system in [continual-learning-bench#11
 
 On [Continual Learning Bench](https://github.com/pgasawa/continual-learning-bench), knowledge cards beat ICL, ACE, and Mem0 in early matched runs on the tasks covered in that PR. Cards are reflected at the end of an instance and reinjected as trusted memory. Setup, configs, and numbers are in the PR.
 
+**Early Harbor signal:** on a same-task with/without-cards A/B (`repo-map`, terminus-2 + GPT-5.6 Luna), both arms passed — and the structure card cut **cost ~36%**, **time ~41%**, and **input tokens ~48%**.
+
 This library is in active development (v0). APIs, on-disk format, and CLI can break without notice until there is a stable release.
 
 v0 is intentionally thin: plain functions and JSON on disk. No vectors, graphs, or LLM reflection yet.
@@ -47,7 +49,7 @@ Episode → ingest / reflect → store (JSON) → retrieve → adapters → host
 | CLI | `src/cli/` | `kc` commands |
 | MCP | `src/mcp/server.ts` | tool handlers (stdio TODO) |
 | Adapters | `src/adapters/` | inject + session-hook stubs |
-| Eval | `eval/` | with/without cards A/B (TODO) |
+| Eval | `eval/` | Harbor with/without cards A/B (cost / time) |
 
 ## Library usage
 
@@ -71,7 +73,7 @@ console.log(formatCardsForInject(cards));
 ## Roadmap / TODOs
 
 1. Real LLM reflection (full notebook rebuild like CL bench)
-2. Eval harness: coding agent with vs without pre-seeded cards (`eval/`)
+2. More Harbor tasks / multi-trial A/B stats (`eval/`)
 3. Cursor session hooks adapter (SessionStart inject / Stop reflect)
 4. Real MCP stdio server
 5. SQLite + FTS / progressive disclosure
@@ -80,6 +82,16 @@ console.log(formatCardsForInject(cards));
 8. Custom harness adapter for continual-learning-bench
 9. Budgeted retrieval (count/char caps)
 10. Confirm/flag feedback on cards
+
+## Eval (Harbor A/B)
+
+Same coding task, with vs without a knowledge card. Same reward — lower cost and latency when the card maps the repo.
+
+```bash
+bun run eval:run -- --task repo-map
+```
+
+Details: [`eval/README.md`](eval/README.md).
 
 ## Commands
 

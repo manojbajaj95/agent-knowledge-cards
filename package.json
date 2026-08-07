@@ -13,7 +13,10 @@
   "scripts": {
     "kc": "bun run src/cli/index.ts",
     "test": "bun test",
-    "typecheck": "tsc --noEmit"
+    "typecheck": "tsc --noEmit",
+    "eval:prepare": "bun run eval/prepare.ts",
+    "eval:compare": "bun run eval/compare.ts",
+    "eval:run": "bun run eval/run.ts"
   },
   "devDependencies": {
     "@types/bun": "latest",

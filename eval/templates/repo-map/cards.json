@@ -1,0 +1,9 @@
+{
+  "cards": [
+    {
+      "id": "00000000-0000-4000-8000-000000000010",
+      "body": "Use when: changing SKU normalization\nLive code path (ignore legacy/ and decoys/):\n- Entry: apps/cli/main.py calls core.pipeline.steps.sku_normalize.normalize_sku\n- Edit: core/pipeline/steps/sku_normalize.py — region prefixes live in REGION_PREFIX\n- Dead ends: legacy/inventory.py and decoys/handlers/update_sku.py are unused",
+      "updatedAt": "2026-08-01T00:00:00.000Z"
+    }
+  ]
+}
