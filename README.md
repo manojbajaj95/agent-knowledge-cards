@@ -1,10 +1,14 @@
 # agent-knowledge-cards
 
-Minimal knowledge-cards library for coding agents: durable facts as cards, reinjected as trusted memory.
+A small library of knowledge cards for coding agents. Cards hold durable facts and get reinjected as trusted memory.
 
-Inspired by [continual-learning-bench#11](https://github.com/pgasawa/continual-learning-bench/pull/11) (end-of-episode reflected cards). This repo is a standalone, harness-agnostic core with thin adapters.
+The design comes from the knowledge_cards system in [continual-learning-bench#11](https://github.com/pgasawa/continual-learning-bench/pull/11). This repo turns that into a separate core you can wire through CLI, MCP, or session hooks.
 
-**Status:** v0 — make it exist first. Simple functions + JSON storage. No vectors, graphs, or LLM reflection yet.
+On [Continual Learning Bench](https://github.com/pgasawa/continual-learning-bench), knowledge cards beat ICL, ACE, and Mem0 in early matched runs on the tasks covered in that PR. Cards are reflected at the end of an instance and reinjected as trusted memory. Setup, configs, and numbers are in the PR.
+
+This library is in active development (v0). APIs, on-disk format, and CLI can break without notice until there is a stable release.
+
+v0 is intentionally thin: plain functions and JSON on disk. No vectors, graphs, or LLM reflection yet.
 
 ## Install
 
@@ -43,7 +47,7 @@ Episode → ingest / reflect → store (JSON) → retrieve → adapters → host
 | CLI | `src/cli/` | `kc` commands |
 | MCP | `src/mcp/server.ts` | tool handlers (stdio TODO) |
 | Adapters | `src/adapters/` | inject + session-hook stubs |
-| Eval | `eval/` | with/without cards A/B (**TODO**) |
+| Eval | `eval/` | with/without cards A/B (TODO) |
 
 ## Library usage
 
@@ -87,5 +91,5 @@ bun run kc -- help   # shows usage via missing command
 
 ## Related
 
-- Design ancestor: [knowledge_cards in CL bench](https://github.com/pgasawa/continual-learning-bench/pull/11)
+- Origin and results: [knowledge_cards PR on continual-learning-bench](https://github.com/pgasawa/continual-learning-bench/pull/11) (mechanism and early wins vs ICL / ACE / Mem0)
 - Pattern refs: [mozilla-ai/cq](https://github.com/mozilla-ai/cq), [claude-mem](https://github.com/thedotmack/claude-mem), [TencentDB-Agent-Memory](https://github.com/TencentCloud/TencentDB-Agent-Memory), [graphify](https://github.com/Graphify-Labs/graphify)

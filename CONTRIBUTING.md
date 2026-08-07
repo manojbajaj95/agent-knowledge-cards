@@ -8,22 +8,28 @@ bun test
 bun run typecheck
 ```
 
-## Workflow
+## Pull requests
 
-1. Work on a feature branch (not `main`).
-2. Keep PRs small. Prefer “make it exist” over speculative architecture.
-3. Use [Conventional Commits](https://www.conventionalcommits.org/): `feat:`, `fix:`, `chore:`, `docs:`, `test:`, `refactor:`.
-4. Core stays pure; harness integration goes in `src/adapters/` or `src/mcp/`.
+Work on a feature branch, not `main`. Keep PRs small. Prefer a working slice over speculative architecture.
 
-## Scope guidance
+Use [Conventional Commits](https://www.conventionalcommits.org/): `feat:`, `fix:`, `chore:`, `docs:`, `test:`, `refactor:`.
 
-See the Roadmap / TODOs in [README.md](README.md). If you add a roadmap item early, leave a clear `TODO` and keep the v0 path working.
+Keep `src/core` free of host concerns. Put harness wiring in `src/adapters/` or `src/mcp/`.
 
-## Tooling (deferred)
+If you pull something forward from the README roadmap, leave a clear TODO and keep the v0 path working.
 
-- CI, pre-commit, and release automation are **not** set up yet (TODO).
-- Lint/format: follow existing style; no enforced formatter in v0.
+## Tooling
 
-## Engineering principles
+CI, pre-commit, and release automation are not set up yet. Match existing style; there is no enforced formatter in v0.
 
-Prefer YAGNI, deep modules, and thin adapters. Do not introduce dependencies for problems we do not have yet.
+## Principles
+
+- YAGNI: build for today's requirement.
+- Prefer trusted libraries over hand-rolled crypto, HTTP clients, or parsers.
+- Deep modules: small surface, real internals. More files is not more modular.
+- Clear boundaries: core stores and retrieves; adapters talk to hosts; CLI presents.
+- No caching, batching, or concurrency without a measured problem.
+- Skip features and abstractions that do not solve a problem we have now.
+- Leave the nearby code a little better (typo, dead import, unclear comment).
+- Comment the why, not the what.
+- Update docs in the same change when behavior changes.
