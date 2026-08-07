@@ -70,18 +70,9 @@ const cards = queryCards(await loadNotebook(), "cents");
 console.log(formatCardsForInject(cards));
 ```
 
-## Roadmap / TODOs
+## Roadmap
 
-1. Real LLM reflection (full notebook rebuild like CL bench)
-2. More Harbor tasks / multi-trial A/B stats (`eval/`)
-3. Cursor session hooks adapter (SessionStart inject / Stop reflect)
-4. Real MCP stdio server
-5. SQLite + FTS / progressive disclosure
-6. Task-tuned reflection prompts
-7. Drift / STALE card handling
-8. Custom harness adapter for continual-learning-bench
-9. Budgeted retrieval (count/char caps)
-10. Confirm/flag feedback on cards
+Research map (hierarchy L0–L4, eval suite, hypotheses): [`roadmap.md`](roadmap.md).
 
 ## Eval (Harbor A/B)
 

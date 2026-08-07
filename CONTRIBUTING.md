@@ -8,6 +8,16 @@ bun test
 bun run typecheck
 ```
 
+## Research contributions
+
+Contributors are welcome. You can help in these ways:
+
+- **Hypotheses** — Add a new entry to [`roadmap.md`](roadmap.md) (or open an issue that links a draft entry). Name the layer, the knob, the A/B arms, and a cite when you have one.
+- **Plugins / adapters** — Wire hosts in `src/adapters/` or `src/mcp/`. Keep `src/core` free of host APIs.
+- **Task families** — Add Harbor tasks under `eval/templates/` so the eval suite can test more memory questions.
+
+Read [`roadmap.md`](roadmap.md) before large research work. Eval uses Harbor + Pi. Pin harness versions. Log which knob you changed.
+
 ## Pull requests
 
 Work on a feature branch, not `main`. Keep PRs small. Prefer a working slice over speculative architecture.
@@ -16,7 +26,7 @@ Use [Conventional Commits](https://www.conventionalcommits.org/): `feat:`, `fix:
 
 Keep `src/core` free of host concerns. Put harness wiring in `src/adapters/` or `src/mcp/`.
 
-If you pull something forward from the README roadmap, leave a clear TODO and keep the v0 path working.
+If you pull a hypothesis forward from [`roadmap.md`](roadmap.md), leave a clear TODO and keep the v0 path working.
 
 ## Tooling
 
