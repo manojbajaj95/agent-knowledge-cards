@@ -1,89 +1,111 @@
 #!/usr/bin/env bun
-import { resolve } from "node:path";
+import { Command } from "commander";
 import { proposeCard } from "../core/ingestion.ts";
-import { reflect } from "../core/reflection.ts";
-import { queryCards } from "../core/retrieval.ts";
-import { loadNotebook, saveNotebook } from "../core/storage.ts";
-import { DEFAULT_NOTEBOOK_PATH } from "../core/types.ts";
+import { queryLibrary } from "../core/retrieval.ts";
+import {
+  FsCardStorage,
+  openLibrary,
+  requireNotebook,
+} from "../core/storage.ts";
+import {
+  DEFAULT_CARDS_ROOT,
+  DEFAULT_NOTEBOOK_ID,
+  allCards,
+} from "../core/types/index.ts";
 
-function usage(): never {
-  console.log(`kc — knowledge cards CLI
+const program = new Command();
 
-Usage:
-  kc status [--path <notebook.json>]
-  kc query [q] [--path <notebook.json>]
-  kc propose <text> [--path <notebook.json>]
-  kc reflect --episode <file> [--path <notebook.json>]
-`);
-  process.exit(1);
-}
+program
+  .name("kc")
+  .description("knowledge cards CLI")
+  .option("--root <dir>", "cards root directory", DEFAULT_CARDS_ROOT)
+  .showHelpAfterError();
 
-function getFlag(args: string[], name: string): string | undefined {
-  const i = args.indexOf(name);
-  if (i === -1) return undefined;
-  return args[i + 1];
-}
+program
+  .command("init")
+  .description("create cards root and default notebook directory")
+  .action(async (_opts, cmd) => {
+    const { root } = cmd.optsWithGlobals() as { root: string };
+    const storage = new FsCardStorage(root);
+    await storage.init();
+    console.log(
+      JSON.stringify(
+        { root, notebook: DEFAULT_NOTEBOOK_ID, initialized: true },
+        null,
+        2,
+      ),
+    );
+  });
 
-function notebookPath(args: string[]): string {
-  return getFlag(args, "--path") ?? DEFAULT_NOTEBOOK_PATH;
-}
+program
+  .command("status")
+  .description("show notebooks and card counts (loads library into memory)")
+  .action(async (_opts, cmd) => {
+    const { root } = cmd.optsWithGlobals() as { root: string };
+    const { library } = await openLibrary(root);
+    console.log(
+      JSON.stringify(
+        {
+          root: library.root,
+          notebooks: library.notebooks.map((n) => ({
+            id: n.id,
+            count: n.cards.length,
+          })),
+          totalCards: allCards(library).length,
+        },
+        null,
+        2,
+      ),
+    );
+  });
 
-async function main(): Promise<void> {
-  const args = process.argv.slice(2);
-  const cmd = args[0];
-  if (!cmd) usage();
+program
+  .command("query")
+  .description("query cards with FTS5 BM25 + RRF")
+  .argument("[q]", "search query (empty = all cards)", "")
+  .option("--notebook <id>", "limit to one notebook")
+  .action(async (q: string, opts: { notebook?: string }, cmd) => {
+    const { root } = cmd.optsWithGlobals() as { root: string };
+    const { library } = await openLibrary(root);
+    const cards = queryLibrary(library, q, opts.notebook);
+    console.log(JSON.stringify(cards, null, 2));
+  });
 
-  const path = notebookPath(args);
+program
+  .command("propose")
+  .description("propose a card (title required; filename slugified from title)")
+  .requiredOption("--title <text>", "card title")
+  .option("--use-when <text>", "optional use-when hint")
+  .option("--notebook <id>", "notebook id", DEFAULT_NOTEBOOK_ID)
+  .argument("[body...]", "card body (defaults to title)")
+  .action(
+    async (
+      bodyParts: string[],
+      opts: { title: string; useWhen?: string; notebook: string },
+      cmd,
+    ) => {
+      const { root } = cmd.optsWithGlobals() as { root: string };
+      const { storage, library } = await openLibrary(root);
 
-  if (cmd === "status") {
-    const nb = await loadNotebook(path);
-    console.log(JSON.stringify({ path, count: nb.cards.length }, null, 2));
-    return;
-  }
+      if (library.notebooks.length === 0) {
+        throw new Error(`No notebooks at ${root}. Run: kc init --root ${root}`);
+      }
+      if (!library.notebooks.some((n) => n.id === opts.notebook)) {
+        throw new Error(
+          `Notebook "${opts.notebook}" not found. Run: kc init (creates "${DEFAULT_NOTEBOOK_ID}")`,
+        );
+      }
 
-  if (cmd === "query") {
-    const positionals = args.slice(1).filter((a, i, arr) => {
-      if (a.startsWith("--")) return false;
-      if (arr[i - 1] === "--path") return false;
-      return true;
-    });
-    const query = positionals[0] ?? "";
-    const nb = await loadNotebook(path);
-    console.log(JSON.stringify(queryCards(nb, query), null, 2));
-    return;
-  }
+      const body = bodyParts.join(" ").trim() || undefined;
+      const nb = requireNotebook(library, opts.notebook);
+      const { card } = proposeCard(nb, {
+        title: opts.title,
+        body,
+        useWhen: opts.useWhen,
+      });
+      await storage.writeCard(opts.notebook, card);
+      console.log(JSON.stringify(card, null, 2));
+    },
+  );
 
-  if (cmd === "propose") {
-    const positionals = args.slice(1).filter((a, i, arr) => {
-      if (a.startsWith("--")) return false;
-      if (arr[i - 1] === "--path") return false;
-      return true;
-    });
-    const text = positionals.join(" ").trim();
-    if (!text) usage();
-    const nb = await loadNotebook(path);
-    const next = proposeCard(nb, text);
-    await saveNotebook(next, path);
-    const added = next.cards[next.cards.length - 1];
-    console.log(JSON.stringify(added, null, 2));
-    return;
-  }
-
-  if (cmd === "reflect") {
-    const episodePath = getFlag(args, "--episode");
-    if (!episodePath) usage();
-    const text = await Bun.file(resolve(episodePath)).text();
-    const nb = await loadNotebook(path);
-    const next = reflect(nb, { text });
-    await saveNotebook(next, path);
-    console.log(JSON.stringify({ path, count: next.cards.length }, null, 2));
-    return;
-  }
-
-  usage();
-}
-
-main().catch((err) => {
-  console.error(err instanceof Error ? err.message : err);
-  process.exit(1);
-});
+await program.parseAsync(process.argv);

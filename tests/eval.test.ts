@@ -7,8 +7,14 @@ import {
   formatCompareReport,
   metricsFromTrial,
 } from "../eval/metrics.ts";
-import { prepareHarborDataset, selectEvalCards } from "../eval/prepare.ts";
-import type { Notebook } from "../src/core/types.ts";
+import { loadTemplateCards, prepareHarborDataset } from "../eval/prepare.ts";
+import {
+  KNOWLEDGE_CARDS_HEADER,
+  TRUST_REMINDER,
+  formatCardsForInject,
+} from "../src/core/inject.ts";
+import { openLibrary } from "../src/core/storage.ts";
+import { allCards } from "../src/core/types/index.ts";
 
 describe("eval metrics", () => {
   test("metricsFromTrial reads cost and duration", () => {
@@ -66,23 +72,23 @@ describe("eval metrics", () => {
 });
 
 describe("eval prepare", () => {
-  test("selectEvalCards prefers payments/cents card", () => {
-    const nb: Notebook = {
-      cards: [
-        {
-          id: "1",
-          body: "Use when: auth\nJWTs go in Authorization",
-          updatedAt: "2026-08-01T00:00:00.000Z",
-        },
-        {
-          id: "2",
-          body: "Use when: payments\nAmounts are integer cents",
-          updatedAt: "2026-08-01T00:00:00.000Z",
-        },
-      ],
-    };
-    expect(selectEvalCards(nb)).toHaveLength(1);
-    expect(selectEvalCards(nb)[0]!.body).toContain("integer cents");
+  test("sample-library loads via openLibrary", async () => {
+    const { library } = await openLibrary("eval/fixtures/sample-library");
+    const cards = allCards(library);
+    expect(library.notebooks.map((n) => n.id)).toEqual(["default"]);
+    expect(cards).toHaveLength(3);
+    expect(cards.some((c) => c.slug === "integer-cents")).toBe(true);
+    const inject = formatCardsForInject(cards);
+    expect(inject).toContain(KNOWLEDGE_CARDS_HEADER);
+    expect(inject).toContain(TRUST_REMINDER);
+  });
+
+  test("loadTemplateCards reads payments-cents seed notebook", async () => {
+    const cards = await loadTemplateCards("eval/templates/payments-cents");
+    expect(cards).toHaveLength(1);
+    expect(cards[0]!.title).toContain("integer cents");
+    expect(cards[0]!.slug).toBe("integer-cents");
+    expect(cards[0]!.useWhen).toContain("payments");
   });
 
   test("prepareHarborDataset writes payments-cents with/without", async () => {
@@ -91,9 +97,16 @@ describe("eval prepare", () => {
     const { withCards, withoutCards } = tasks[0]!;
     const withText = await Bun.file(join(withCards, "instruction.md")).text();
     const withoutText = await Bun.file(join(withoutCards, "instruction.md")).text();
-    expect(withText).toContain("KNOWLEDGE CARDS");
+
+    expect(withText).toContain(KNOWLEDGE_CARDS_HEADER);
+    expect(withText).toContain(TRUST_REMINDER);
+    expect(withText).toContain("[1] (integer-cents)");
+    expect(withText).toContain("Payment amounts are integer cents");
+    expect(withText).toContain("Use when: fixing payments or apply_discount");
     expect(withText).toContain("integer cents");
-    expect(withoutText).not.toContain("KNOWLEDGE CARDS");
+    expect(withText).toContain("conflicting README");
+    expect(withoutText).not.toContain(KNOWLEDGE_CARDS_HEADER);
+    expect(await Bun.file(join(withCards, "cards")).exists()).toBe(false);
     expect(await Bun.file(join(withCards, "environment", "payments.py")).exists()).toBe(
       true,
     );
@@ -104,9 +117,14 @@ describe("eval prepare", () => {
     const { withCards, withoutCards } = tasks[0]!;
     const withText = await Bun.file(join(withCards, "instruction.md")).text();
     const withoutText = await Bun.file(join(withoutCards, "instruction.md")).text();
+
+    expect(withText).toContain(KNOWLEDGE_CARDS_HEADER);
+    expect(withText).toContain("[1] (sku-normalization)");
+    expect(withText).toContain("Live SKU normalize path");
+    expect(withText).toContain("Use when: fixing EU SKU prefix or normalize_sku");
     expect(withText).toContain("core/pipeline/steps/sku_normalize.py");
-    expect(withText).toContain("ignore legacy/");
-    expect(withoutText).not.toContain("KNOWLEDGE CARDS");
+    expect(withText).toContain("decoys/handlers/update_sku.py");
+    expect(withoutText).not.toContain(KNOWLEDGE_CARDS_HEADER);
     expect(withoutText).toContain("EU-WIDGET");
     expect(
       await Bun.file(

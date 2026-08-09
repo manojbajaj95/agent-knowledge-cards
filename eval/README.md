@@ -64,19 +64,27 @@ harbor view eval/jobs
 
 ```
 eval/
-  templates/<task-id>/   # instruction, cards.json, env, tests, solution
+  templates/<task-id>/   # instruction, cards/<notebook>/*.md, env, tests, solution
   prepare.ts             # writes harbor/<task>-{with,without}-cards
   run.ts                 # prepare → harbor run ×2 → compare
   compare.ts / metrics.ts
-  fixtures/              # sample-cards + offline compare fixtures
+  fixtures/              # sample-library + offline compare fixtures
   harbor/                # generated dataset
   jobs/                  # local Harbor outputs (gitignored)
 ```
 
+Seed cards use the same layout as production:
+
+```
+templates/<task-id>/cards/default/*.md
+```
+
 ## Offline check
 
+Eval pipeline helpers only (prepare / metrics / compare). Product A/B runs use `eval:run`.
+
 ```bash
-bun test tests/eval.test.ts
+bun test
 bun run eval:compare -- \
   --with eval/fixtures/sample-results/with-cards \
   --without eval/fixtures/sample-results/without-cards

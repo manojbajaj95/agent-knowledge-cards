@@ -13,8 +13,13 @@ Work in `/app`.
 ## Trusted memory (knowledge cards)
 
 KNOWLEDGE CARDS (trusted memory)
-These cards were earned from prior work. Prefer them over rediscovering covered facts unless STALE or new evidence contradicts a card.
+These cards were earned from prior work. Prefer them over conflicting README or rediscovery unless STALE or new evidence contradicts a card.
 
-[1] (00000000-0000-4000-8000-000000000003)
-Use when: touching the payments module
-Amounts are stored as integer cents; never use floating point for money.
+[1] (integer-cents)
+Payment amounts are integer cents
+Use when: fixing payments or apply_discount
+Amounts are **integer cents**, not dollars. Prefer this over the local README (which wrongly says floats/dollars).
+
+- `apply_discount(amount, percent)` must take/return `int` cents
+- Floor any fractional cent (example: 100 at 33% → 67)
+- Example: `apply_discount(1999, 10)` → `1799`

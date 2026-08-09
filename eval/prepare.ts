@@ -1,15 +1,20 @@
 /**
  * Materialize Harbor tasks for with/without knowledge-cards A/B evals.
  *
- * Templates live in eval/templates/<task-id>/. Each gets two Harbor tasks:
+ * Templates live in eval/templates/<task-id>/. Seed cards use the same
+ * filesystem layout as production: cards/<notebook-id>/*.md
+ * (default notebook under cards/default/).
+ *
+ * Each template becomes two Harbor tasks:
  *   eval/harbor/<task-id>-with-cards
  *   eval/harbor/<task-id>-without-cards
  */
 import { chmod, cp, mkdir, readdir, readFile, rm, writeFile } from "node:fs/promises";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
-import { formatCardsForInject } from "../src/adapters/custom-harness.ts";
-import type { KnowledgeCard, Notebook } from "../src/core/types.ts";
+import { formatCardsForInject } from "../src/core/inject.ts";
+import { openLibrary } from "../src/core/storage.ts";
+import { allCards, type KnowledgeCard } from "../src/core/types/index.ts";
 
 const EVAL_DIR = dirname(fileURLToPath(import.meta.url));
 const TEMPLATES_DIR = join(EVAL_DIR, "templates");
@@ -34,10 +39,13 @@ async function listTemplateIds(): Promise<string[]> {
     .sort();
 }
 
-async function loadTemplateCards(templateDir: string): Promise<KnowledgeCard[]> {
-  const path = join(templateDir, "cards.json");
-  const notebook = (await Bun.file(path).json()) as Notebook;
-  return notebook.cards;
+/** Load seed cards via FsCardStorage layout (cards/<notebook>/*.md). */
+export async function loadTemplateCards(
+  templateDir: string,
+): Promise<KnowledgeCard[]> {
+  const cardsRoot = join(templateDir, "cards");
+  const { library } = await openLibrary(cardsRoot);
+  return allCards(library);
 }
 
 async function copyTree(src: string, dest: string): Promise<void> {
@@ -57,7 +65,7 @@ async function writeTask(opts: {
   await copyTree(opts.templateDir, dest);
 
   await rm(join(dest, "instruction.base.md"), { force: true });
-  await rm(join(dest, "cards.json"), { force: true });
+  await rm(join(dest, "cards"), { recursive: true, force: true });
 
   const base = await readFile(join(opts.templateDir, "instruction.base.md"), "utf8");
   let instruction = base.trimEnd() + "\n";
@@ -99,7 +107,7 @@ export async function prepareHarborDataset(
     const templateDir = join(TEMPLATES_DIR, taskId);
     const cards = await loadTemplateCards(templateDir);
     if (cards.length === 0) {
-      throw new Error(`No cards in ${join(templateDir, "cards.json")}`);
+      throw new Error(`No cards in ${join(templateDir, "cards")}`);
     }
     const withCards = await writeTask({
       taskId,
@@ -117,12 +125,6 @@ export async function prepareHarborDataset(
   }
 
   return { datasetDir: HARBOR_DIR, tasks };
-}
-
-/** @deprecated Prefer prepareHarborDataset([taskId]); kept for older tests. */
-export function selectEvalCards(notebook: Notebook): KnowledgeCard[] {
-  const cents = notebook.cards.filter((c) => /integer cents|payments/i.test(c.body));
-  return cents.length > 0 ? cents : notebook.cards;
 }
 
 async function main(): Promise<void> {

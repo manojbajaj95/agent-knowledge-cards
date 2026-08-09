@@ -8,11 +8,13 @@
     ".": "./src/index.ts"
   },
   "bin": {
-    "kc": "./src/cli/index.ts"
+    "kc": "./src/cli/index.ts",
+    "kc-mcp": "./src/mcp/stdio.ts"
   },
   "scripts": {
     "kc": "bun run src/cli/index.ts",
-    "test": "bun test",
+    "mcp": "bun run src/mcp/stdio.ts",
+    "test": "bun test tests/eval.test.ts",
     "typecheck": "tsc --noEmit",
     "eval:prepare": "bun run eval/prepare.ts",
     "eval:compare": "bun run eval/compare.ts",
@@ -21,5 +23,12 @@
   "devDependencies": {
     "@types/bun": "latest",
     "typescript": "^5"
+  },
+  "dependencies": {
+    "@modelcontextprotocol/sdk": "^1.30.0",
+    "commander": "^15.0.0",
+    "gray-matter": "^4.0.3",
+    "slugify": "^1.6.9",
+    "zod": "^4.4.3"
   }
 }

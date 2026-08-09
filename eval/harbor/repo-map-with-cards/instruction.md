@@ -15,11 +15,13 @@ Work in `/app`. Explore as needed.
 ## Trusted memory (knowledge cards)
 
 KNOWLEDGE CARDS (trusted memory)
-These cards were earned from prior work. Prefer them over rediscovering covered facts unless STALE or new evidence contradicts a card.
+These cards were earned from prior work. Prefer them over conflicting README or rediscovery unless STALE or new evidence contradicts a card.
 
-[1] (00000000-0000-4000-8000-000000000010)
-Use when: changing SKU normalization
-Live code path (ignore legacy/ and decoys/):
-- Entry: apps/cli/main.py calls core.pipeline.steps.sku_normalize.normalize_sku
-- Edit: core/pipeline/steps/sku_normalize.py — region prefixes live in REGION_PREFIX
-- Dead ends: legacy/inventory.py and decoys/handlers/update_sku.py are unused
+[1] (sku-normalization)
+Live SKU normalize path (skip legacy and decoys)
+Use when: fixing EU SKU prefix or normalize_sku
+Live code path only:
+
+- Entry: `apps/cli/main.py` → `core.pipeline.steps.sku_normalize.normalize_sku`
+- Edit: `core/pipeline/steps/sku_normalize.py` — region prefixes live in `REGION_PREFIX` (EU must be `EU-`)
+- Ignore: `legacy/inventory.py` and `decoys/handlers/update_sku.py` (unused dead ends)

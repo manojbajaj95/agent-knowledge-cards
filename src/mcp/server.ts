@@ -1,96 +1,80 @@
 /**
- * MCP tool handlers for knowledge cards.
- *
- * TODO: wire a real MCP stdio server (@modelcontextprotocol/sdk).
- * For now these handlers call core so hosts can integrate manually.
+ * MCP server for knowledge cards (official @modelcontextprotocol/sdk).
+ * Core stays free of the MCP SDK; this module is the host edge.
  */
 
-import { proposeCard } from "../core/ingestion.ts";
-import { queryCards } from "../core/retrieval.ts";
-import { loadNotebook, saveNotebook } from "../core/storage.ts";
-import { DEFAULT_NOTEBOOK_PATH, type Notebook } from "../core/types.ts";
+import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
+import { z } from "zod";
+import { toolInit, toolPropose, toolQuery, toolStatus } from "./tools.ts";
 
-export type ToolResult = {
-  content: Array<{ type: "text"; text: string }>;
-};
+export function createKnowledgeCardsServer(): McpServer {
+  const server = new McpServer({
+    name: "agent-knowledge-cards",
+    version: "0.0.1",
+  });
 
-async function withNotebook(
-  path: string,
-  fn: (nb: Notebook) => Notebook | Promise<Notebook> | void,
-): Promise<Notebook> {
-  const nb = await loadNotebook(path);
-  const next = await fn(nb);
-  if (next) {
-    await saveNotebook(next, path);
-    return next;
-  }
-  return nb;
+  server.registerTool(
+    "init",
+    {
+      title: "Init knowledge cards",
+      description: "Create cards root and default notebook directory",
+      inputSchema: {
+        root: z
+          .string()
+          .optional()
+          .describe("Cards root directory (default: .agents/knowledge_cards)"),
+      },
+    },
+    async (args) => toolInit(args),
+  );
+
+  server.registerTool(
+    "status",
+    {
+      title: "Knowledge cards status",
+      description: "Return cards root, notebooks, and card counts",
+      inputSchema: {
+        root: z.string().optional().describe("Cards root directory"),
+      },
+    },
+    async (args) => toolStatus(args),
+  );
+
+  server.registerTool(
+    "query",
+    {
+      title: "Query knowledge cards",
+      description: "Query knowledge cards with FTS5 BM25 + RRF (empty q = all)",
+      inputSchema: {
+        q: z.string().optional().describe("Search query"),
+        root: z.string().optional().describe("Cards root directory"),
+        notebook: z.string().optional().describe("Limit to one notebook id"),
+      },
+    },
+    async (args) => toolQuery(args),
+  );
+
+  server.registerTool(
+    "propose",
+    {
+      title: "Propose knowledge card",
+      description:
+        "Propose a knowledge card (title required; filename slugified from title)",
+      inputSchema: {
+        title: z.string().describe("Card title (required)"),
+        body: z.string().optional().describe("Card body (defaults to title)"),
+        useWhen: z.string().optional().describe("Optional use-when hint"),
+        notebook: z.string().optional().describe("Notebook id (default: default)"),
+        root: z.string().optional().describe("Cards root directory"),
+      },
+    },
+    async (args) => toolPropose(args),
+  );
+
+  return server;
 }
 
-export const tools = {
-  status: {
-    description: "Return notebook path and card count",
-    inputSchema: {
-      type: "object",
-      properties: {
-        path: { type: "string", description: "Notebook JSON path" },
-      },
-    },
-    async handler(args: { path?: string }): Promise<ToolResult> {
-      const path = args.path ?? DEFAULT_NOTEBOOK_PATH;
-      const nb = await loadNotebook(path);
-      return {
-        content: [
-          {
-            type: "text",
-            text: JSON.stringify({ path, count: nb.cards.length }),
-          },
-        ],
-      };
-    },
-  },
-
-  query: {
-    description: "Query knowledge cards by substring (empty = all)",
-    inputSchema: {
-      type: "object",
-      properties: {
-        q: { type: "string" },
-        path: { type: "string" },
-      },
-    },
-    async handler(args: { q?: string; path?: string }): Promise<ToolResult> {
-      const path = args.path ?? DEFAULT_NOTEBOOK_PATH;
-      const nb = await loadNotebook(path);
-      const cards = queryCards(nb, args.q ?? "");
-      return {
-        content: [{ type: "text", text: JSON.stringify(cards, null, 2) }],
-      };
-    },
-  },
-
-  propose: {
-    description: "Append a knowledge card to the notebook",
-    inputSchema: {
-      type: "object",
-      properties: {
-        body: { type: "string" },
-        path: { type: "string" },
-      },
-      required: ["body"],
-    },
-    async handler(args: { body: string; path?: string }): Promise<ToolResult> {
-      const path = args.path ?? DEFAULT_NOTEBOOK_PATH;
-      const next = await withNotebook(path, (nb) => proposeCard(nb, args.body));
-      const added = next.cards[next.cards.length - 1];
-      return {
-        content: [{ type: "text", text: JSON.stringify(added, null, 2) }],
-      };
-    },
-  },
-} as const;
-
-/** List tool names for discovery. */
+/** Tool names registered on the MCP server. */
 export function listTools(): string[] {
-  return Object.keys(tools);
+  return ["init", "status", "query", "propose"];
 }

@@ -2,6 +2,7 @@
 node_modules
 
 # local notebooks / runtime
+.agents/knowledge_cards/
 .knowledge-cards/
 
 # Harbor eval job outputs

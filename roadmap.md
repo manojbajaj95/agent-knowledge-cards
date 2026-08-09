@@ -240,7 +240,7 @@ Each entry uses this shape:
 
 ### 5.2 L1 — Knowledge cards
 
-L1 is the current product wedge. v0 already has propose, JSON store, substring query, stub reflect, inject formatting, and Harbor with/without seeds.
+L1 is the current product wedge. v0 is filesystem-first: markdown cards under `.agents/knowledge_cards`, propose with required title (slugified filename), FTS5 BM25+RRF query over an in-memory library, inject formatting, and Harbor with/without seeds. Reflection is still TODO.
 
 #### L1-H1 — Real LLM reflection
 
@@ -298,19 +298,19 @@ L1 is the current product wedge. v0 already has propose, JSON store, substring q
 - **How to A/B:** arm A uses a prompt tuned to the task family; arm B uses one generic prompt.
 - **Cite:** current README TODO; skill-library specialization patterns.
 
-#### L1-H9 — SQLite and FTS store
+#### L1-H9 — Database storage for multiplayer and production
 
-- **Knob:** retrieval
-- **Why it can help:** Substring search on JSON does not scale. FTS can improve recall and precision.
-- **How to A/B:** same query set and tasks; arm A uses SQLite FTS; arm B uses JSON substring.
-- **Cite:** claude-mem SQLite + FTS5; cq local SQLite store.
+- **Knob:** adapters / storage
+- **Why it can help:** The filesystem backend is single-machine and file-based. Multiplayer and production need a shared database behind `CardStorage` instead of local markdown files.
+- **How to A/B:** same card content and tasks; arm A uses `FsCardStorage`; arm B uses a database `CardStorage`. Measure correctness, latency, and multi-writer safety when relevant.
+- **Cite:** `CardStorage` in [`src/core/storage.ts`](src/core/storage.ts); cq local SQLite store; claude-mem SQLite.
 
 #### L1-H10 — Trusted inject formatting
 
 - **Knob:** injection
 - **Why it can help:** The frame around a card can change whether the agent obeys it.
 - **How to A/B:** same card body; vary the inject wrapper (trusted-memory block vs plain note vs tool result).
-- **Cite:** [`src/adapters/custom-harness.ts`](src/adapters/custom-harness.ts); CL-bench trusted memory inject.
+- **Cite:** [`src/core/inject.ts`](src/core/inject.ts); CL-bench trusted memory inject.
 
 #### L1-H11 — MCP stdio adapter
 
@@ -324,7 +324,22 @@ L1 is the current product wedge. v0 already has propose, JSON store, substring q
 - **Knob:** adapters
 - **Why it can help:** SessionStart inject and Stop reflect close the loop without a human command.
 - **How to A/B:** arm A uses hooks; arm B uses manual or instruction-only memory.
-- **Cite:** [`src/adapters/session-hooks.ts`](src/adapters/session-hooks.ts); claude-mem lifecycle hooks; greplica Cursor/Codex hooks.
+- **Cite:** [`src/lifecycle/session.ts`](src/lifecycle/session.ts); claude-mem lifecycle hooks; greplica Cursor/Codex hooks.
+
+#### L1-H13 — Improve retrieval quality
+
+- **Knob:** retrieval
+- **Why it can help:** Substring match over loaded cards is weak. Better ranking, FTS, or light semantic match can raise precision and recall without changing card content.
+- **How to A/B:** fixed query set and tasks; arm A uses current substring retrieval; arm B uses the improved retriever. Measure hit rate, injected tokens, reward, and cost.
+- **Cite:** claude-mem SQLite + FTS5; progressive disclosure (L1-H4).
+- **Status:** v0 now uses in-memory SQLite FTS5 BM25 with RRF across field-weighted rankings (still filesystem-backed cards). Further gains (budgets, progressive disclosure, embeddings) remain open.
+
+#### L1-H14 — Create an agent skill and Agent Plugin
+
+- **Knob:** adapters
+- **Why it can help:** A skill (`SKILL.md`) teaches hosts when and how to init, query, propose, and inject cards via CLI or MCP. Packaging that skill plus the MCP stdio server as an [Agent Plugin](https://agent-plugins.org/) (`plugin.json`, `skills/`, `mcp.json`) lets compatible clients discover and load the same bundle without per-client rearrangement.
+- **How to A/B:** same coding tasks; arm A installs the knowledge-cards Agent Plugin (skill + MCP); arm B has MCP/CLI available but no skill/plugin. Optional arm C: skill only vs full plugin. Measure reward, cost, and whether cards are queried or proposed.
+- **Cite:** [Agent Plugins](https://agent-plugins.org/); [Agent Skills](https://agentskills.io/specification); cq skill-guided query/propose; [`src/cli/`](src/cli/); [`src/mcp/`](src/mcp/).
 
 ### 5.3 L2 — Skills
 
@@ -451,6 +466,7 @@ One line each. Hypotheses above cite these where they apply.
 
 | Source | One line |
 |--------|----------|
+| [Agent Plugins](https://agent-plugins.org/) | Portable package for skills + MCP (`plugin.json`, `skills/`, `mcp.json`) across clients. |
 | [mozilla-ai/cq](https://github.com/mozilla-ai/cq) | Shared knowledge units with query, propose, confirm, flag, and optional reflect. |
 | [claude-mem](https://github.com/thedotmack/claude-mem) | Session capture, compression, and progressive disclosure back into later sessions. |
 | [greplica](https://github.com/Autoloops/greplica) | Repo memory as components, flows, and claims for planning context. |
@@ -498,9 +514,10 @@ See also [`CONTRIBUTING.md`](CONTRIBUTING.md).
 
 | Area | Now | Roadmap pull |
 |------|-----|--------------|
-| Core cards | JSON notebook, propose, substring query, stub reflect | L1 hypotheses |
-| Adapters | Inject helper; session-hook stubs; MCP handlers without stdio | L1-H10…H12 |
-| Eval | Harbor with/without; `repo-map`; `payments-cents`; terminus-2 default | §4 task families; Pi target |
+| Core cards | **Filesystem-only** markdown under `.agents/knowledge_cards`; propose+title→slug; FTS5 BM25+RRF retrieval; reflect TODO | L1 hypotheses; L1-H9 DB swap; L1-H13 further retrieval |
+| Storage | `FsCardStorage` behind `CardStorage` | L1-H9 database for multiplayer / production |
+| Lifecycle | Session hooks + message inject; trust copy in `src/core/inject.ts` | L1-H10…H12; L1-H14 skill + Agent Plugin |
+| Eval | Harbor with/without; `repo-map`; `payments-cents`; terminus-2 default. **Primary gate for this slice** (no parallel unit suite). | §4 task families; Pi target |
 | CL-bench | Design ancestor; not wired here | Manual runs in sibling repo |
 
 Keep the v0 path working when you pull a hypothesis forward.
