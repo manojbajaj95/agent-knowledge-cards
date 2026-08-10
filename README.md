@@ -1,12 +1,10 @@
+# Knowcards
 
+### Local-first durable facts for coding agents, reinjected as trusted memory
 
-# agent-knowledge-cards
-
-### Durable facts for coding agents, reinjected as trusted memory
-
-
-
-
+[![npm version](https://img.shields.io/npm/v/knowcards?style=flat-square)](https://www.npmjs.com/package/knowcards)
+[![npm](https://img.shields.io/npm/dm/knowcards?style=flat-square&logo=npm)](https://www.npmjs.com/package/knowcards)
+[![license](https://img.shields.io/github/license/manojbajaj95/agent-knowledge-cards?style=flat-square)](LICENSE)
 
 ---
 
@@ -17,8 +15,6 @@ That wastes tokens and time, and it still misses important facts.
 **agent-knowledge-cards** stores durable facts as knowledge cards and reinjects them as trusted memory. The agent prefers the card over rediscovery unless the card is stale or contradicted.
 
 ---
-
-
 
 ## Quick start
 
@@ -49,8 +45,6 @@ npx knowcards mcp
 
 ---
 
-
-
 ## How it works
 
 ```
@@ -72,8 +66,6 @@ init → store (markdown) → loadAll → retrieve → inject → host
 
 ---
 
-
-
 ## Benchmarks
 
 On Continual Learning Bench, knowledge cards beat ICL, ACE, and Mem0 in early matched runs ([PR](https://github.com/pgasawa/continual-learning-bench/pull/11)).
@@ -90,8 +82,6 @@ Harbor A/B (`repo-map`, n=3): both arms reward 1.0. With cards, cost and duratio
 
 
 ---
-
-
 
 ## Contributing
 
