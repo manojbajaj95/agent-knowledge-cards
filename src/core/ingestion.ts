@@ -37,7 +37,9 @@ export function proposeCard(
 
   const slug = slugify(title);
   if (notebook.cards.some((c) => c.slug === slug)) {
-    throw new Error(`Card slug "${slug}" already exists in notebook "${notebook.id}"`);
+    throw new Error(
+      `Card slug "${slug}" already exists in notebook "${notebook.id}"`,
+    );
   }
 
   const now = new Date().toISOString();

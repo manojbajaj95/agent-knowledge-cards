@@ -9,9 +9,9 @@ import {
 } from "../eval/metrics.ts";
 import { loadTemplateCards, prepareHarborDataset } from "../eval/prepare.ts";
 import {
+  formatCardsForInject,
   KNOWLEDGE_CARDS_HEADER,
   TRUST_REMINDER,
-  formatCardsForInject,
 } from "../src/core/inject.ts";
 import { openLibrary } from "../src/core/storage.ts";
 import { allCards } from "../src/core/types/index.ts";
@@ -21,7 +21,11 @@ describe("eval metrics", () => {
     const row = metricsFromTrial({
       task_name: "t",
       trial_name: "t__1",
-      agent_result: { cost_usd: 0.02, n_input_tokens: 100, n_output_tokens: 50 },
+      agent_result: {
+        cost_usd: 0.02,
+        n_input_tokens: 100,
+        n_output_tokens: 50,
+      },
       verifier_result: { rewards: { reward: 1 } },
       agent_execution: {
         started_at: "2026-08-07T10:00:00.000Z",
@@ -96,7 +100,9 @@ describe("eval prepare", () => {
     expect(tasks).toHaveLength(1);
     const { withCards, withoutCards } = tasks[0]!;
     const withText = await Bun.file(join(withCards, "instruction.md")).text();
-    const withoutText = await Bun.file(join(withoutCards, "instruction.md")).text();
+    const withoutText = await Bun.file(
+      join(withoutCards, "instruction.md"),
+    ).text();
 
     expect(withText).toContain(KNOWLEDGE_CARDS_HEADER);
     expect(withText).toContain(TRUST_REMINDER);
@@ -107,32 +113,45 @@ describe("eval prepare", () => {
     expect(withText).toContain("conflicting README");
     expect(withoutText).not.toContain(KNOWLEDGE_CARDS_HEADER);
     expect(await Bun.file(join(withCards, "cards")).exists()).toBe(false);
-    expect(await Bun.file(join(withCards, "environment", "payments.py")).exists()).toBe(
-      true,
-    );
+    expect(
+      await Bun.file(join(withCards, "environment", "payments.py")).exists(),
+    ).toBe(true);
   });
 
   test("prepareHarborDataset writes repo-map structure card", async () => {
     const { tasks } = await prepareHarborDataset(["repo-map"]);
     const { withCards, withoutCards } = tasks[0]!;
     const withText = await Bun.file(join(withCards, "instruction.md")).text();
-    const withoutText = await Bun.file(join(withoutCards, "instruction.md")).text();
+    const withoutText = await Bun.file(
+      join(withoutCards, "instruction.md"),
+    ).text();
 
     expect(withText).toContain(KNOWLEDGE_CARDS_HEADER);
     expect(withText).toContain("[1] (sku-normalization)");
     expect(withText).toContain("Live SKU normalize path");
-    expect(withText).toContain("Use when: fixing EU SKU prefix or normalize_sku");
+    expect(withText).toContain(
+      "Use when: fixing EU SKU prefix or normalize_sku",
+    );
     expect(withText).toContain("core/pipeline/steps/sku_normalize.py");
     expect(withText).toContain("decoys/handlers/update_sku.py");
     expect(withoutText).not.toContain(KNOWLEDGE_CARDS_HEADER);
     expect(withoutText).toContain("EU-WIDGET");
     expect(
       await Bun.file(
-        join(withCards, "environment", "core", "pipeline", "steps", "sku_normalize.py"),
+        join(
+          withCards,
+          "environment",
+          "core",
+          "pipeline",
+          "steps",
+          "sku_normalize.py",
+        ),
       ).exists(),
     ).toBe(true);
     expect(
-      await Bun.file(join(withCards, "environment", "decoys", "handlers", "update_sku.py")).exists(),
+      await Bun.file(
+        join(withCards, "environment", "decoys", "handlers", "update_sku.py"),
+      ).exists(),
     ).toBe(true);
   });
 });

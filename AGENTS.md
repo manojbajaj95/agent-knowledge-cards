@@ -8,8 +8,9 @@ Conventions for agents working in this repo.
 - `src/cli/` — thin CLI over core (`init`, `status`, `query`, `propose`).
 - `src/mcp/` — MCP stdio server (`@modelcontextprotocol/sdk`); tool logic in `tools.ts`.
 - `src/lifecycle/` — session hooks + message-list inject. Keep thin.
-- `eval/` — Harbor with/without cards A/B (`eval:prepare` / `eval:run` / `eval:compare`). **Primary validation** for this slice.
+- `eval/` — Harbor with/without cards A/B (`eval:prepare` / `eval:run` / `eval:compare`). **Primary validation** for this slice (manual; not CI).
 - `tests/eval.test.ts` — offline checks for the eval pipeline (prepare / metrics / compare). No separate unit-test suite.
+- `dist/` — build output for npm / `npx` (do not edit; emit with `bun run build`).
 
 ## On-disk cards
 
@@ -19,16 +20,19 @@ Conventions for agents working in this repo.
 
 ```bash
 bun install
+pre-commit install       # once per clone
 bun test                 # eval pipeline offline checks only
 bun run typecheck
+bun run lint
+bun run build
 bun run kc init|status|query|propose
 bun run mcp              # MCP stdio server
-bun run eval:prepare
+bun run eval:prepare     # Harbor — manual
 bun run eval:run -- --task repo-map --agent oracle
 bun run eval:run -- --task repo-map  # terminus-2 + openai/gpt-5.6-luna
 ```
 
-Use **bun**, not npm/pnpm/yarn/node for scripts.
+Use **bun** for local scripts (`bun test`, `bun run …`). The published package targets **Node** (`npx kc`); retrieval uses MiniSearch (no `bun:sqlite`).
 
 ## Rules
 
@@ -36,8 +40,9 @@ Use **bun**, not npm/pnpm/yarn/node for scripts.
 2. Lifecycle and MCP wrap core; do not put host APIs into core (inject *wording* in `src/core/inject.ts` is fine; Cursor/MCP SDKs are not).
 3. Do not add vectors, graphs, or hybrid search to core without discussion — see README roadmap.
 4. Prefer the smallest change that makes the feature exist; polish later.
-5. Conventional Commits for git messages (`feat:`, `fix:`, `chore:`, …).
-6. **Rely on Harbor evals** to judge product changes in this slice (with/without cards A/B). Do not grow a parallel unit-test suite unless needed for eval tooling.
+5. Conventional Commits for git messages (`feat:`, `fix:`, `chore:`, …) — Release Please drives versions from these.
+6. **Rely on Harbor evals** to judge product changes in this slice (with/without cards A/B). Do not grow a parallel unit-test suite unless needed for eval tooling. Do not add Harbor to CI.
+
 ## Design ancestor
 
 CL bench `knowledge_cards`: act during an instance, reflect at end, inject cards as trusted memory. This library generalizes that into reusable functions + lifecycle/MCP host edges.

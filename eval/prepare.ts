@@ -9,7 +9,15 @@
  *   eval/harbor/<task-id>-with-cards
  *   eval/harbor/<task-id>-without-cards
  */
-import { chmod, cp, mkdir, readdir, readFile, rm, writeFile } from "node:fs/promises";
+import {
+  chmod,
+  cp,
+  mkdir,
+  readdir,
+  readFile,
+  rm,
+  writeFile,
+} from "node:fs/promises";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 import { formatCardsForInject } from "../src/core/inject.ts";
@@ -67,7 +75,10 @@ async function writeTask(opts: {
   await rm(join(dest, "instruction.base.md"), { force: true });
   await rm(join(dest, "cards"), { recursive: true, force: true });
 
-  const base = await readFile(join(opts.templateDir, "instruction.base.md"), "utf8");
+  const base = await readFile(
+    join(opts.templateDir, "instruction.base.md"),
+    "utf8",
+  );
   let instruction = base.trimEnd() + "\n";
   if (opts.variant === "with-cards") {
     instruction +=
@@ -96,7 +107,9 @@ export async function prepareHarborDataset(
 
   for (const id of selected) {
     if (!available.includes(id)) {
-      throw new Error(`Unknown task template "${id}". Available: ${available.join(", ")}`);
+      throw new Error(
+        `Unknown task template "${id}". Available: ${available.join(", ")}`,
+      );
     }
   }
 

@@ -1,4 +1,4 @@
-import { mkdir, readdir } from "node:fs/promises";
+import { mkdir, readdir, readFile, writeFile } from "node:fs/promises";
 import { join } from "node:path";
 import { parseCardMarkdown, serializeCardMarkdown } from "./markdown.ts";
 import {
@@ -62,7 +62,7 @@ export class FsCardStorage implements CardStorage {
       for (const file of files.sort()) {
         if (!file.endsWith(".md") || file.startsWith(".")) continue;
         const slug = file.slice(0, -3);
-        const raw = await Bun.file(join(notebookPath, file)).text();
+        const raw = await readFile(join(notebookPath, file), "utf8");
         cards.push(parseCardMarkdown(slug, raw));
       }
       notebooks.push({ id: name, cards });
@@ -75,7 +75,7 @@ export class FsCardStorage implements CardStorage {
     const dir = join(this.root, notebookId);
     await mkdir(dir, { recursive: true });
     const path = join(dir, `${card.slug}.md`);
-    await Bun.write(path, serializeCardMarkdown(card));
+    await writeFile(path, serializeCardMarkdown(card), "utf8");
   }
 }
 

@@ -1,5 +1,5 @@
-import type { KnowledgeCard } from "../core/types/knowledge-card.ts";
 import { formatCardsForInject } from "../core/inject.ts";
+import type { KnowledgeCard } from "../core/types/knowledge-card.ts";
 
 /**
  * Inject formatted cards into a message list (custom / CL-bench-style harness).

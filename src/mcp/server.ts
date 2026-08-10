@@ -64,7 +64,10 @@ export function createKnowledgeCardsServer(): McpServer {
         title: z.string().describe("Card title (required)"),
         body: z.string().optional().describe("Card body (defaults to title)"),
         useWhen: z.string().optional().describe("Optional use-when hint"),
-        notebook: z.string().optional().describe("Notebook id (default: default)"),
+        notebook: z
+          .string()
+          .optional()
+          .describe("Notebook id (default: default)"),
         root: z.string().optional().describe("Cards root directory"),
       },
     },

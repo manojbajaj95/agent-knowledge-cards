@@ -22,22 +22,28 @@ v0 is **filesystem-first**: knowledge cards live only as local markdown files un
 ## Install
 
 ```bash
+npm install agent-knowledge-cards
+npx kc --help
+
+# from source (Bun for local scripts)
 bun install
+bun run build
 ```
 
 ## Quick start
 
 ```bash
 # Create root + default notebook
-bun run kc init
+npx kc init
+# or from a clone: bun run kc init
 
 # Propose a card (title required; filename slugified from title)
-bun run kc propose --title "JWT auth header" --use-when auth \
+npx kc propose --title "JWT auth header" --use-when auth \
   "JWTs go in the Authorization header"
 
 # Query / status (loads all notebooks into memory)
-bun run kc query jwt
-bun run kc status
+npx kc query jwt
+npx kc status
 ```
 
 Default root: `.agents/knowledge_cards` (override with `--root`). Default notebook: `default`.
@@ -66,7 +72,7 @@ init → store (markdown) → loadAll (in-memory library) → retrieve → injec
 |-----------|--------|------|
 | Ingestion | `src/core/ingestion.ts` | `proposeCard` (requires title; slugifies for filename) |
 | Storage | `src/core/storage.ts` | `CardStorage` + filesystem `FsCardStorage` (only backend today) |
-| Retrieval | `src/core/retrieval.ts` | in-memory FTS5 BM25 + RRF over cards loaded from disk |
+| Retrieval | `src/core/retrieval.ts` | MiniSearch (BM25+) over cards loaded from disk |
 | Inject | `src/core/inject.ts` | trusted-memory prompt block (`formatCardsForInject`) |
 | Lifecycle | `src/lifecycle/` | session hooks + message-list inject |
 | Reflection | `src/core/reflection.ts` | TODO |
@@ -120,25 +126,30 @@ Details: [`eval/README.md`](eval/README.md).
 ```bash
 bun test              # eval pipeline offline checks only
 bun run typecheck
+bun run lint
+bun run build         # emit dist/ (npm / npx)
 bun run kc init
 bun run mcp           # MCP stdio server (init/status/query/propose)
-bun run eval:run -- --task repo-map
+bun run eval:run -- --task repo-map   # Harbor A/B — manual, not CI
 ```
 
-Product judgment for this slice is **Harbor with/without-cards evals**, not a unit-test suite. See [`eval/README.md`](eval/README.md).
+Product judgment for this slice is **Harbor with/without-cards evals**, not a unit-test suite. See [`eval/README.md`](eval/README.md). Releases: Conventional Commits → Release Please → OIDC npm publish. See [`CONTRIBUTING.md`](CONTRIBUTING.md).
 
 ### MCP (Cursor)
+
+After install (`kc-mcp` on PATH), or from a clone:
 
 ```json
 {
   "mcpServers": {
     "knowledge-cards": {
-      "command": "bun",
-      "args": ["run", "/absolute/path/to/agent-knowledge-cards/src/mcp/stdio.ts"]
+      "command": "kc-mcp"
     }
   }
 }
 ```
+
+From source without build: `"command": "bun", "args": ["run", "/absolute/path/to/agent-knowledge-cards/src/mcp/stdio.ts"]`.
 
 ## Related
 

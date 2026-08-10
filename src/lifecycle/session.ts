@@ -6,7 +6,7 @@
 
 import { formatCardsForInject } from "../core/inject.ts";
 import { openLibrary } from "../core/storage.ts";
-import { DEFAULT_CARDS_ROOT, allCards } from "../core/types/index.ts";
+import { allCards, DEFAULT_CARDS_ROOT } from "../core/types/index.ts";
 
 /** SessionStart-style: load all notebooks into memory and return inject text. */
 export async function onSessionStart(

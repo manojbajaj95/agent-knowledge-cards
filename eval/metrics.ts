@@ -24,7 +24,10 @@ export type TrialResult = {
   agent_execution?: TimingInfo | null;
   started_at?: string | null;
   finished_at?: string | null;
-  exception_info?: { exception_type?: string; exception_message?: string } | null;
+  exception_info?: {
+    exception_type?: string;
+    exception_message?: string;
+  } | null;
 };
 
 export type VariantMetrics = {
@@ -61,7 +64,10 @@ export type CompareReport = {
   };
 };
 
-function durationSec(timing?: TimingInfo | null, fallback?: TimingInfo | null): number | null {
+function durationSec(
+  timing?: TimingInfo | null,
+  fallback?: TimingInfo | null,
+): number | null {
   const start = timing?.started_at ?? fallback?.started_at;
   const end = timing?.finished_at ?? fallback?.finished_at;
   if (!start || !end) return null;
@@ -74,13 +80,17 @@ function primaryReward(verifier?: VerifierResult | null): number | null {
   const rewards = verifier?.rewards;
   if (!rewards) return null;
   if (typeof rewards.reward === "number") return rewards.reward;
-  const values = Object.values(rewards).filter((v): v is number => typeof v === "number");
+  const values = Object.values(rewards).filter(
+    (v): v is number => typeof v === "number",
+  );
   if (values.length === 0) return null;
   return values[0]!;
 }
 
 function mean(nums: Array<number | null | undefined>): number | null {
-  const xs = nums.filter((n): n is number => typeof n === "number" && Number.isFinite(n));
+  const xs = nums.filter(
+    (n): n is number => typeof n === "number" && Number.isFinite(n),
+  );
   if (xs.length === 0) return null;
   return xs.reduce((a, b) => a + b, 0) / xs.length;
 }
@@ -91,7 +101,9 @@ function delta(a: number | null, b: number | null): number | null {
 }
 
 /** Extract comparable metrics from one Harbor trial `result.json`. */
-export function metricsFromTrial(trial: TrialResult): VariantMetrics["trials"][number] {
+export function metricsFromTrial(
+  trial: TrialResult,
+): VariantMetrics["trials"][number] {
   return {
     trialName: trial.trial_name ?? "unknown",
     taskName: trial.task_name ?? "unknown",
@@ -140,10 +152,19 @@ export function compareVariants(
     withoutCards,
     delta: {
       meanCostUsd: delta(withCards.meanCostUsd, withoutCards.meanCostUsd),
-      meanDurationSec: delta(withCards.meanDurationSec, withoutCards.meanDurationSec),
+      meanDurationSec: delta(
+        withCards.meanDurationSec,
+        withoutCards.meanDurationSec,
+      ),
       meanReward: delta(withCards.meanReward, withoutCards.meanReward),
-      meanInputTokens: delta(withCards.meanInputTokens, withoutCards.meanInputTokens),
-      meanOutputTokens: delta(withCards.meanOutputTokens, withoutCards.meanOutputTokens),
+      meanInputTokens: delta(
+        withCards.meanInputTokens,
+        withoutCards.meanInputTokens,
+      ),
+      meanOutputTokens: delta(
+        withCards.meanOutputTokens,
+        withoutCards.meanOutputTokens,
+      ),
     },
   };
 }
@@ -156,7 +177,15 @@ function fmt(n: number | null, digits = 4): string {
 /** Human-readable A/B table for stdout. */
 export function formatCompareReport(report: CompareReport): string {
   const rows = [
-    ["variant", "reward", "cost_usd", "duration_s", "input_tok", "output_tok", "errors"],
+    [
+      "variant",
+      "reward",
+      "cost_usd",
+      "duration_s",
+      "input_tok",
+      "output_tok",
+      "errors",
+    ],
     [
       "with-cards",
       fmt(report.withCards.meanReward, 3),
@@ -186,7 +215,9 @@ export function formatCompareReport(report: CompareReport): string {
     ],
   ];
 
-  const widths = rows[0]!.map((_, i) => Math.max(...rows.map((r) => r[i]!.length)));
+  const widths = rows[0]!.map((_, i) =>
+    Math.max(...rows.map((r) => r[i]!.length)),
+  );
   const line = (r: string[]) =>
     r.map((cell, i) => cell.padEnd(widths[i]!)).join("  ");
 

@@ -1,17 +1,20 @@
-import { bm25RankedLists } from "./fts.ts";
-import { reciprocalRankFusion } from "./rrf.ts";
-import type { KnowledgeCard, KnowledgeLibrary, Notebook } from "./types/index.ts";
+import { rankCardIds } from "./fts.ts";
+import type {
+  KnowledgeCard,
+  KnowledgeLibrary,
+  Notebook,
+} from "./types/index.ts";
 import { allCards } from "./types/index.ts";
 
 /**
- * Retrieve cards with in-memory SQLite FTS5 BM25, fused via RRF across
- * title-heavy, body-heavy, and slug/useWhen-heavy rankings.
+ * Retrieve cards with MiniSearch (BM25+) over the in-memory library.
  * Empty query returns all cards (stable id order).
  *
- * Persistence remains filesystem-first; FTS is built from the in-memory library.
+ * Persistence remains filesystem-first; the search index is built per query.
  *
  * TODO: budgeted retrieval (count/char caps)
  * TODO: progressive disclosure (see roadmap L1-H4)
+ * TODO: tune boosts / reuse index across queries
  */
 export function queryCards(notebook: Notebook, query: string): KnowledgeCard[] {
   return rankCards(notebook.cards, query);
@@ -42,13 +45,12 @@ function rankCards(cards: KnowledgeCard[], query: string): KnowledgeCard[] {
   const q = query.trim();
   if (!q) return [...cards];
 
-  const lists = bm25RankedLists(cards, q);
-  const fusedIds = reciprocalRankFusion(lists);
-  if (fusedIds.length === 0) return [];
+  const ids = rankCardIds(cards, q);
+  if (ids.length === 0) return [];
 
   const byId = new Map(cards.map((c) => [c.id, c]));
   const out: KnowledgeCard[] = [];
-  for (const id of fusedIds) {
+  for (const id of ids) {
     const card = byId.get(id);
     if (card) out.push(card);
   }

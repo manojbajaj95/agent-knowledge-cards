@@ -81,7 +81,10 @@ function parseArgs(argv: string[]): RunOpts {
   };
 }
 
-async function findNewestJobDir(jobsDir: string, prefix: string): Promise<string> {
+async function findNewestJobDir(
+  jobsDir: string,
+  prefix: string,
+): Promise<string> {
   const glob = new Bun.Glob(`${prefix}*`);
   const matches: string[] = [];
   for await (const name of glob.scan({ cwd: jobsDir, onlyFiles: false })) {
@@ -131,7 +134,9 @@ async function harborRun(opts: {
   });
   const code = await proc.exited;
   if (code !== 0) {
-    throw new Error(`harbor run failed with exit ${code} (job ${opts.jobName})`);
+    throw new Error(
+      `harbor run failed with exit ${code} (job ${opts.jobName})`,
+    );
   }
   return findNewestJobDir(opts.jobsDir, opts.jobName);
 }
@@ -179,7 +184,9 @@ async function main(): Promise<void> {
   const { datasetDir, tasks } = await prepareHarborDataset(opts.taskIds);
   console.log(`Dataset ready: ${datasetDir}`);
   console.log(`Tasks: ${tasks.map((t) => t.taskId).join(", ")}`);
-  console.log(`Agent/model: ${opts.agent}${opts.model ? ` / ${opts.model}` : ""}`);
+  console.log(
+    `Agent/model: ${opts.agent}${opts.model ? ` / ${opts.model}` : ""}`,
+  );
 
   if (opts.dryPrepare) {
     console.log("prepare-only: skipping harbor run");

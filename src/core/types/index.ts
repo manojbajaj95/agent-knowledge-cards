@@ -25,7 +25,9 @@ export type Episode = {
 /** Default on-disk root: one dir per notebook (domain). */
 export const DEFAULT_CARDS_ROOT = ".agents/knowledge_cards";
 
-export function emptyLibrary(root: string = DEFAULT_CARDS_ROOT): KnowledgeLibrary {
+export function emptyLibrary(
+  root: string = DEFAULT_CARDS_ROOT,
+): KnowledgeLibrary {
   return { root, notebooks: [] };
 }
 

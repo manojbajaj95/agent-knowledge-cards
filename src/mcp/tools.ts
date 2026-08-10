@@ -6,9 +6,9 @@ import {
   requireNotebook,
 } from "../core/storage.ts";
 import {
+  allCards,
   DEFAULT_CARDS_ROOT,
   DEFAULT_NOTEBOOK_ID,
-  allCards,
 } from "../core/types/index.ts";
 
 export type ToolTextResult = {
@@ -22,7 +22,9 @@ function ok(payload: unknown): ToolTextResult {
       {
         type: "text",
         text:
-          typeof payload === "string" ? payload : JSON.stringify(payload, null, 2),
+          typeof payload === "string"
+            ? payload
+            : JSON.stringify(payload, null, 2),
       },
     ],
   };

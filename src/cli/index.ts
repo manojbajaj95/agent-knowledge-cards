@@ -1,4 +1,4 @@
-#!/usr/bin/env bun
+#!/usr/bin/env node
 import { Command } from "commander";
 import { proposeCard } from "../core/ingestion.ts";
 import { queryLibrary } from "../core/retrieval.ts";
@@ -8,9 +8,9 @@ import {
   requireNotebook,
 } from "../core/storage.ts";
 import {
+  allCards,
   DEFAULT_CARDS_ROOT,
   DEFAULT_NOTEBOOK_ID,
-  allCards,
 } from "../core/types/index.ts";
 
 const program = new Command();

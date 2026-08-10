@@ -1,4 +1,4 @@
-#!/usr/bin/env bun
+#!/usr/bin/env node
 /**
  * Stdio MCP entrypoint for hosts (Cursor, Claude Desktop, etc.).
  *

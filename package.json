@@ -1,26 +1,65 @@
 {
   "name": "agent-knowledge-cards",
   "version": "0.0.1",
-  "private": true,
+  "description": "Filesystem-first knowledge cards for coding agents — durable facts reinjected as trusted memory",
+  "license": "MIT",
   "type": "module",
-  "module": "src/index.ts",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
   "exports": {
-    ".": "./src/index.ts"
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js",
+      "default": "./dist/index.js"
+    }
   },
   "bin": {
-    "kc": "./src/cli/index.ts",
-    "kc-mcp": "./src/mcp/stdio.ts"
+    "kc": "./dist/cli/index.js",
+    "kc-mcp": "./dist/mcp/stdio.js"
   },
+  "files": [
+    "dist",
+    "LICENSE",
+    "README.md"
+  ],
+  "engines": {
+    "node": ">=20"
+  },
+  "publishConfig": {
+    "access": "public",
+    "provenance": true
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/manojbajaj95/agent-knowledge-cards.git"
+  },
+  "bugs": {
+    "url": "https://github.com/manojbajaj95/agent-knowledge-cards/issues"
+  },
+  "homepage": "https://github.com/manojbajaj95/agent-knowledge-cards#readme",
+  "keywords": [
+    "agents",
+    "knowledge-cards",
+    "mcp",
+    "memory",
+    "cli"
+  ],
   "scripts": {
     "kc": "bun run src/cli/index.ts",
     "mcp": "bun run src/mcp/stdio.ts",
+    "build": "tsc -p tsconfig.build.json",
+    "prepublishOnly": "bun run build",
     "test": "bun test tests/eval.test.ts",
     "typecheck": "tsc --noEmit",
+    "lint": "biome check .",
+    "lint:fix": "biome check --write .",
+    "format": "biome format --write .",
     "eval:prepare": "bun run eval/prepare.ts",
     "eval:compare": "bun run eval/compare.ts",
     "eval:run": "bun run eval/run.ts"
   },
   "devDependencies": {
+    "@biomejs/biome": "^2.5.7",
     "@types/bun": "latest",
     "typescript": "^5"
   },
@@ -28,6 +67,7 @@
     "@modelcontextprotocol/sdk": "^1.30.0",
     "commander": "^15.0.0",
     "gray-matter": "^4.0.3",
+    "minisearch": "^7.2.0",
     "slugify": "^1.6.9",
     "zod": "^4.4.3"
   }

@@ -240,7 +240,7 @@ Each entry uses this shape:
 
 ### 5.2 L1 — Knowledge cards
 
-L1 is the current product wedge. v0 is filesystem-first: markdown cards under `.agents/knowledge_cards`, propose with required title (slugified filename), FTS5 BM25+RRF query over an in-memory library, inject formatting, and Harbor with/without seeds. Reflection is still TODO.
+L1 is the current product wedge. v0 is filesystem-first: markdown cards under `.agents/knowledge_cards`, propose with required title (slugified filename), MiniSearch (BM25+) query over an in-memory library, inject formatting, and Harbor with/without seeds. Reflection is still TODO.
 
 #### L1-H1 — Real LLM reflection
 
@@ -332,7 +332,7 @@ L1 is the current product wedge. v0 is filesystem-first: markdown cards under `.
 - **Why it can help:** Substring match over loaded cards is weak. Better ranking, FTS, or light semantic match can raise precision and recall without changing card content.
 - **How to A/B:** fixed query set and tasks; arm A uses current substring retrieval; arm B uses the improved retriever. Measure hit rate, injected tokens, reward, and cost.
 - **Cite:** claude-mem SQLite + FTS5; progressive disclosure (L1-H4).
-- **Status:** v0 now uses in-memory SQLite FTS5 BM25 with RRF across field-weighted rankings (still filesystem-backed cards). Further gains (budgets, progressive disclosure, embeddings) remain open.
+- **Status:** v0 uses MiniSearch (BM25+) over the in-memory library (filesystem-backed cards). Further gains (boost tuning, budgets, progressive disclosure, embeddings) remain open.
 
 #### L1-H14 — Create an agent skill and Agent Plugin
 
@@ -514,7 +514,7 @@ See also [`CONTRIBUTING.md`](CONTRIBUTING.md).
 
 | Area | Now | Roadmap pull |
 |------|-----|--------------|
-| Core cards | **Filesystem-only** markdown under `.agents/knowledge_cards`; propose+title→slug; FTS5 BM25+RRF retrieval; reflect TODO | L1 hypotheses; L1-H9 DB swap; L1-H13 further retrieval |
+| Core cards | **Filesystem-only** markdown under `.agents/knowledge_cards`; propose+title→slug; MiniSearch BM25+ retrieval; reflect TODO | L1 hypotheses; L1-H9 DB swap; L1-H13 further retrieval |
 | Storage | `FsCardStorage` behind `CardStorage` | L1-H9 database for multiplayer / production |
 | Lifecycle | Session hooks + message inject; trust copy in `src/core/inject.ts` | L1-H10…H12; L1-H14 skill + Agent Plugin |
 | Eval | Harbor with/without; `repo-map`; `payments-cents`; terminus-2 default. **Primary gate for this slice** (no parallel unit suite). | §4 task families; Pi target |

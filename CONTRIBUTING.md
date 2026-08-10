@@ -4,12 +4,22 @@
 
 ```bash
 bun install
-bun test                 # eval pipeline offline checks
+pre-commit install        # Biome + basic file checks on commit
+bun test                  # eval pipeline offline checks
 bun run typecheck
-bun run eval:prepare
+bun run lint
+bun run build             # emit dist/ for publish / npx
 ```
 
-Validation for this slice is **Harbor evals** (with/without cards A/B). `bun test` only covers eval prepare/metrics/compare helpers — not a general unit suite.
+Harbor A/B evals are **manual only** (not in CI):
+
+```bash
+bun run eval:prepare
+bun run eval:run -- --task repo-map --agent oracle
+```
+
+Validation for product changes in this slice is still **Harbor evals** (with/without cards A/B). `bun test` only covers eval prepare/metrics/compare helpers — not a general unit suite.
+
 ## Research contributions
 
 Contributors are welcome. You can help in these ways:
@@ -24,7 +34,9 @@ Read [`roadmap.md`](roadmap.md) before large research work. Eval uses Harbor + P
 
 Work on a feature branch, not `main`. Keep PRs small. Prefer a working slice over speculative architecture.
 
-Use [Conventional Commits](https://www.conventionalcommits.org/): `feat:`, `fix:`, `chore:`, `docs:`, `test:`, `refactor:`.
+`main` requires a PR and a green `ci` check. Maintainers can bypass branch protection when needed.
+
+Use [Conventional Commits](https://www.conventionalcommits.org/): `feat:`, `fix:`, `chore:`, `docs:`, `test:`, `refactor:`. Release Please uses these for SemVer and `CHANGELOG.md`.
 
 Keep `src/core` free of host SDKs. Put session/message wiring in `src/lifecycle/` or `src/mcp/`.
 
@@ -32,7 +44,17 @@ If you pull a hypothesis forward from [`roadmap.md`](roadmap.md), leave a clear 
 
 ## Tooling
 
-CI, pre-commit, and release automation are not set up yet. Match existing style; there is no enforced formatter in v0.
+| Tool | Command |
+|------|---------|
+| Lint / format | `bun run lint` / `bun run lint:fix` (Biome) |
+| Typecheck | `bun run typecheck` |
+| Build | `bun run build` → `dist/` |
+| Tests | `bun test` |
+| Pre-commit | Biome check + trailing whitespace / YAML / large files |
+| CI | `.github/workflows/ci.yml` (lint, typecheck, build, test) |
+| Release | Release Please → git tag → OIDC `npm publish` (`.github/workflows/release-please.yml`) |
+
+Harbor evals are not run in CI.
 
 ## Principles
 

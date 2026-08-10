@@ -51,7 +51,10 @@ async function collectTrialResults(jobDir: string): Promise<TrialResult[]> {
   return trials;
 }
 
-export async function compareJobDirs(withJobDir: string, withoutJobDir: string) {
+export async function compareJobDirs(
+  withJobDir: string,
+  withoutJobDir: string,
+) {
   const withTrials = await collectTrialResults(withJobDir);
   const withoutTrials = await collectTrialResults(withoutJobDir);
   return compareVariants(
