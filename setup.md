@@ -6,7 +6,7 @@ Date: 2026-08-10
 
 - Brownfield TypeScript library (CLI + MCP + Harbor eval tooling)
 - Stack: Bun (local scripts/tests), `bun:test`, `tsc`, Biome; published runtime is Node
-- Public npm package `agent-knowledge-cards`
+- Public npm package `knowcards`
 - Retrieval: MiniSearch (BM25+); no `bun:sqlite`
 - Harbor evals stay manual (not CI)
 
@@ -42,7 +42,7 @@ Trusted publishing is OIDC from GitHub Actions — no long-lived `NPM_TOKEN` in 
 
 1. Ensure the package name is available / owned under your npm account.
 2. **Bootstrap:** if the package does not exist yet, publish once manually (`bun run build && npm publish --access public` with 2FA), **or** create the package entry on npmjs.com first if your account flow allows it.
-3. On [npmjs.com](https://www.npmjs.com) → package **agent-knowledge-cards** → **Settings** → **Trusted Publisher**:
+3. On [npmjs.com](https://www.npmjs.com) → package **knowcards** → **Settings** → **Trusted Publisher**:
    - Provider: GitHub Actions
    - Organization or user: `manojbajaj95`
    - Repository: `agent-knowledge-cards`

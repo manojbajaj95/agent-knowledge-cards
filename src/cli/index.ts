@@ -16,7 +16,7 @@ import {
 const program = new Command();
 
 program
-  .name("kc")
+  .name("knowcards")
   .description("knowledge cards CLI")
   .option("--root <dir>", "cards root directory", DEFAULT_CARDS_ROOT)
   .showHelpAfterError();
@@ -88,11 +88,13 @@ program
       const { storage, library } = await openLibrary(root);
 
       if (library.notebooks.length === 0) {
-        throw new Error(`No notebooks at ${root}. Run: kc init --root ${root}`);
+        throw new Error(
+          `No notebooks at ${root}. Run: knowcards init --root ${root}`,
+        );
       }
       if (!library.notebooks.some((n) => n.id === opts.notebook)) {
         throw new Error(
-          `Notebook "${opts.notebook}" not found. Run: kc init (creates "${DEFAULT_NOTEBOOK_ID}")`,
+          `Notebook "${opts.notebook}" not found. Run: knowcards init (creates "${DEFAULT_NOTEBOOK_ID}")`,
         );
       }
 
@@ -107,5 +109,13 @@ program
       console.log(JSON.stringify(card, null, 2));
     },
   );
+
+program
+  .command("mcp")
+  .description("run the knowledge cards MCP server over stdio")
+  .action(async () => {
+    const { startMcpStdio } = await import("../mcp/stdio.ts");
+    await startMcpStdio();
+  });
 
 await program.parseAsync(process.argv);

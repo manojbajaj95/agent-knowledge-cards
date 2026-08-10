@@ -1,10 +1,23 @@
 # Eval: with vs without knowledge cards
 
-Harbor A/B: same coding task twice — once with a pre-seeded knowledge card injected into the instruction, once without. Compare **reward**, **cost_usd**, and **agent duration**.
+Harbor A/B comparing **reward**, **cost_usd**, and **agent duration**.
 
 Built on [Harbor](https://www.harborframework.com/).
 
 Default agent/model: `terminus-2` + `openai/gpt-5.6-luna`.
+
+## Current vs target A/B
+
+**Today (v0):** prepare forks each template into two Harbor task dirs (`…-with-cards` / `…-without-cards`). Same env/tests/solution and base instruction; the with-cards arm **pre-injects** seed card text into `instruction.md`. Both arms use the same agent. This isolates whether card *content* helps when already in context — not product retrieval/MCP.
+
+**Target:** one Harbor task package per family (instruction and env unchanged). A/B by **agent config**:
+
+| Arm | Agent |
+|-----|--------|
+| with | Required system/prompt for knowledge cards + MCP (`npx knowcards mcp`) + tools to query/propose |
+| without | Same base agent/model, no cards prompt, no MCP/tools |
+
+Cards stay on disk in the sandbox (or host-mounted library); the with-arm agent must retrieve/inject via tools. Tracked under roadmap §4.7.
 
 ## Tasks
 

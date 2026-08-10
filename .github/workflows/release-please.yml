@@ -51,7 +51,7 @@ jobs:
 
       # Trusted publishing (OIDC). Configure on npmjs.com → package → Trusted Publisher:
       #   Organization or user: manojbajaj95
-      #   Repository: agent-knowledge-cards
+      #   Package: knowcards  (GitHub repo: agent-knowledge-cards)
       #   Workflow filename: release-please.yml
       - name: Publish to npm
         run: npm publish --access public
