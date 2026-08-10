@@ -31,7 +31,7 @@ knowcards propose --title "JWT auth header" --use-when auth \
 
 knowcards query jwt
 knowcards status
-knowcards mcp
+npx knowcards mcp
 ```
 
 ### MCP
@@ -40,8 +40,8 @@ knowcards mcp
 {
   "mcpServers": {
     "knowledge-cards": {
-      "command": "knowcards",
-      "args": ["mcp"]
+      "command": "npx",
+      "args": ["knowcards", "mcp"]
     }
   }
 }
