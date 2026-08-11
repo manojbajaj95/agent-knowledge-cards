@@ -1,5 +1,11 @@
 # AGENTS.md
 
+Always talk in ASD-STE100 Simplified Technical English. Also follow Zinsser's four principles of quality writing:
+1. Simplicity
+2. Brevity
+3. Clarity
+4. Humanity
+
 Conventions for agents working in this repo.
 
 ## Layout

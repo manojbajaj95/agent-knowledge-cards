@@ -1,10 +1,12 @@
 ---
 name: knowcards
 description: >
-  Manages durable project knowledge cards (query before acting, propose
-  at task end). Use on coding work in this repo — starting a task,
-  exploring broadly, fixing non-obvious errors, or wrapping up after
-  proving a repo nuance, guideline, domain learning, or do/don't.
+  Query and propose local knowledge cards for this repo. Always use at
+  the start of work here — run `npx knowcards query` before acting. Also
+  use when wrapping up after proving a durable nuance, guideline, domain
+  learning, or do/don't (propose a card). Skip only for routine edits in
+  code you already hold with no repo nuance at stake, or if you already
+  queried this topic in the session.
 ---
 
 # Knowcards CLI
