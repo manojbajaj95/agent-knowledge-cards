@@ -1,6 +1,6 @@
 import type { KnowledgeCard } from "./knowledge-card.ts";
 
-/** Notebook created by `knowcards init` until multi-domain is wired. */
+/** Notebook id; default notebook dirs are created on propose (init parked). */
 export const DEFAULT_NOTEBOOK_ID = "default";
 
 /** A domain notebook: subdirectory under the cards root. */

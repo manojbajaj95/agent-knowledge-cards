@@ -23,7 +23,9 @@ program
 
 program
   .command("init")
-  .description("create cards root and default notebook directory")
+  .description(
+    "(parked) create cards root and default notebook; prefer propose which mkdir -p",
+  )
   .action(async (_opts, cmd) => {
     const { root } = cmd.optsWithGlobals() as { root: string };
     const storage = new FsCardStorage(root);
@@ -86,18 +88,7 @@ program
     ) => {
       const { root } = cmd.optsWithGlobals() as { root: string };
       const { storage, library } = await openLibrary(root);
-
-      if (library.notebooks.length === 0) {
-        throw new Error(
-          `No notebooks at ${root}. Run: knowcards init --root ${root}`,
-        );
-      }
-      if (!library.notebooks.some((n) => n.id === opts.notebook)) {
-        throw new Error(
-          `Notebook "${opts.notebook}" not found. Run: knowcards init (creates "${DEFAULT_NOTEBOOK_ID}")`,
-        );
-      }
-
+      // writeCard mkdir -p; no explicit init required
       const body = bodyParts.join(" ").trim() || undefined;
       const nb = requireNotebook(library, opts.notebook);
       const { card } = proposeCard(nb, {

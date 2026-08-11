@@ -81,11 +81,7 @@ export async function toolPropose(args: {
   const root = args.root ?? DEFAULT_CARDS_ROOT;
   const notebookId = args.notebook ?? DEFAULT_NOTEBOOK_ID;
   const { storage, library } = await openLibrary(root);
-  if (!library.notebooks.some((n) => n.id === notebookId)) {
-    return fail(
-      `Notebook "${notebookId}" not found at ${root}. Run init first.`,
-    );
-  }
+  // writeCard mkdir -p; no explicit init required
   try {
     const nb = requireNotebook(library, notebookId);
     const { card } = proposeCard(nb, {

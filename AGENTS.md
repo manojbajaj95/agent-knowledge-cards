@@ -14,7 +14,7 @@ Conventions for agents working in this repo.
 
 ## On-disk cards
 
-**Filesystem-first:** cards are local markdown only (`.agents/knowledge_cards/<notebook-id>/*.md`). No DB backend yet. `knowcards init` creates `default/`. Process start loads the full library into memory via `openLibrary`.
+**Filesystem-first:** cards are local markdown only (`.agents/knowledge_cards/<notebook-id>/*.md`). No DB backend yet. `propose` creates notebook dirs as needed (`init` is parked). Process start loads the full library into memory via `openLibrary`.
 
 ## Commands
 
@@ -25,7 +25,7 @@ bun test                 # eval pipeline offline checks only
 bun run typecheck
 bun run lint
 bun run build
-bun run knowcards init|status|query|propose|mcp
+bun run knowcards status|query|propose|mcp
 bun run eval:prepare     # Harbor — manual
 bun run eval:run -- --task repo-map --agent oracle
 bun run eval:run -- --task repo-map  # terminus-2 + openai/gpt-5.6-luna

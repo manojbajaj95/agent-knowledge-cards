@@ -21,10 +21,7 @@ Knowcards keeps those facts as local markdown cards and reinjects them as truste
 Cards live as markdown under `.agents/knowledge_cards`. Run the CLI with `npx`:
 
 ```bash
-# Create .agents/knowledge_cards/default/
-npx knowcards init
-
-# Write a durable fact as a markdown card
+# Write a durable fact as a markdown card (creates dirs if needed)
 npx knowcards propose --title "JWT auth header" --use-when auth \
   "JWTs go in the Authorization header"
 
