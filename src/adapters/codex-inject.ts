@@ -2,18 +2,12 @@
 /**
  * Codex UserPromptSubmit → additionalContext inject.
  */
-import { onSessionPrompt } from "../lifecycle/session.ts";
-import { parseStdinJson, pickString, writeJson } from "./io.ts";
+import { runAdditiveInject } from "./run.ts";
 
-const payload = parseStdinJson<Record<string, unknown>>();
-const prompt =
-  pickString(payload, ["prompt", "user_prompt", "content", "message"]) ?? "";
-
-const inject = await onSessionPrompt(prompt);
-writeJson({
+await runAdditiveInject((inject) => ({
   suppressOutput: true,
   hookSpecificOutput: {
     hookEventName: "UserPromptSubmit",
     additionalContext: inject,
   },
-});
+}));

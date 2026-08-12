@@ -5,7 +5,9 @@ export {
 } from "./core/ingestion.ts";
 export {
   formatCardsForInject,
+  INJECT_DRILLDOWN,
   KNOWLEDGE_CARDS_HEADER,
+  slugsFromInject,
   TRUST_REMINDER,
 } from "./core/inject.ts";
 export { parseCardMarkdown, serializeCardMarkdown } from "./core/markdown.ts";

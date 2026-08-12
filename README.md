@@ -104,7 +104,7 @@ propose → store (markdown) → loadAll → retrieve → inject → host
 | Step | What happens |
 | ---- | ------------ |
 | Install | `knowcards install` merges host hooks (Claude Code / Codex / Cursor) |
-| Inject | On the user prompt, retrieve relevant cards and inject trusted memory |
+| Inject | On the user prompt, retrieve relevant cards and inject titles (query or MCP for full text) |
 | Reflect | On Stop, the host continues with a reflection prompt; the **agent** writes cards |
 | Propose | Write one fact worth keeping as a card (CLI, MCP, or reflect turn) |
 | Store | One markdown file per card under `.agents/knowledge_cards/<notebook>/` |

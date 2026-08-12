@@ -31,6 +31,8 @@ export type SessionPromptOptions = {
   root?: string;
   /** Project cwd for path resolution (unused today; reserved). */
   cwd?: string;
+  /** Additive hosts: omit slugs already injected this session. */
+  skipSlugs?: Iterable<string>;
 };
 
 export type SessionStopOptions = {
@@ -41,7 +43,7 @@ export type SessionStopOptions = {
 
 /**
  * First-prompt inject: retrieve cards for the user message and format trusted memory.
- * Empty / whitespace query yields an empty inject block (does not dump all cards).
+ * Empty query, no hits, or all hits skipped yields "" (hosts skip additionalContext).
  */
 export async function onSessionPrompt(
   userText: string,
@@ -49,11 +51,12 @@ export async function onSessionPrompt(
 ): Promise<string> {
   const root = options.root ?? DEFAULT_CARDS_ROOT;
   const q = userText.trim();
-  if (!q) {
-    return formatCardsForInject([]);
-  }
+  if (!q) return "";
+  const skip = new Set(options.skipSlugs ?? []);
   const { library } = await openLibrary(root);
-  const cards = budgetInjectCards(queryLibrary(library, q));
+  const cards = budgetInjectCards(
+    queryLibrary(library, q).filter((c) => !skip.has(c.slug)),
+  );
   return formatCardsForInject(cards);
 }
 

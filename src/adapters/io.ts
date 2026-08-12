@@ -23,6 +23,15 @@ export function writeJson(value: unknown): void {
   process.stdout.write(`${JSON.stringify(value)}\n`);
 }
 
+/** Memory must never block the host session. */
+export async function withFailOpen(run: () => Promise<void>): Promise<void> {
+  try {
+    await run();
+  } catch {
+    writeJson({ continue: true });
+  }
+}
+
 /** Pick first non-empty string field from a loose host payload. */
 export function pickString(
   obj: Record<string, unknown>,
