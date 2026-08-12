@@ -206,7 +206,7 @@ Build task families as eval hypotheses. Implement by bandwidth.
 
 Today `[eval/run.ts](eval/run.ts)` defaults to `terminus-2` and `openai/gpt-5.6-luna`.
 
-**Current A/B (v0):** `[eval/prepare.ts](eval/prepare.ts)` materializes two Harbor task dirs per family and pre-injects seed cards into the with-cards `instruction.md`. Same agent both arms. Useful for “does card text help?” — does **not** exercise MCP/retrieval.
+**Current A/B (v0):** `[eval/prepare.ts](eval/prepare.ts)` materializes two Harbor task dirs per family. Same `instruction.md` both arms. With-cards copies seed cards into `environment/.agents/knowledge_cards/` plus `AGENTS.md`. Without-cards has neither. Exercises on-disk retrieval — not MCP/hooks.
 
 **Target A/B:** one Harbor task per family (fixed instruction/env/tests). Arms differ only by agent:
 
@@ -215,7 +215,7 @@ Today `[eval/run.ts](eval/run.ts)` defaults to `terminus-2` and `openai/gpt-5.6-
 
 **Harness target:** Harbor + Pi via ACP, with pinned Harbor and Pi versions. Wire agent A/B (prompt/MCP on vs off) on that stack when ready.
 
-Keep the existing templates as seeds. Until agent A/B lands, keep the instruction-inject fork as the working gate. Log both the old and the new defaults in the run log during the transition. See `[eval/README.md](eval/README.md)`.
+Keep the existing templates as seeds. Until Harbor job-config MCP-on vs MCP-off lands, keep the on-disk with/without fork as the working gate. See `[eval/README.md](eval/README.md)`.
 
 ### 4.8 Experiment run log
 
@@ -597,7 +597,7 @@ Record needs here. Decide the delivery method when you take the task.
 | ------------------------------------------- | ------------------------------------------------------------------------------------- |
 | Durable experiment compare UX               | Run volume will outgrow ad-hoc notes.                                                 |
 | Pi default wired in `[eval/](eval/)`        | Roadmap target is Harbor + Pi; code still defaults to terminus-2.                     |
-| Agent A/B (same task; prompt+MCP on vs off) | v0 forks task dirs and pre-injects cards; target keeps one task and varies the agent. |
+| Agent A/B (same task; prompt+MCP on vs off) | v0 forks task dirs; with-arm has on-disk cards. Target: one task, MCP on vs off.      |
 | Run-log schema v1                           | Ablation fields must stay stable across contributors.                                 |
 | Multi-trial stats helpers                   | Single trials are noisy; families need repeat runs.                                   |
 | How to store L3 artifacts                   | Wiki files vs DB vs hybrid — decide when L3 work starts.                              |
@@ -631,7 +631,7 @@ See also `[CONTRIBUTING.md](CONTRIBUTING.md)`.
 | Core cards | **Filesystem-only** markdown under `.agents/knowledge_cards`; propose+title→slug; MiniSearch BM25+ retrieval; agent-follow-up reflect (`REFLECT.md` override) | L1 hypotheses; L1-H9 DB swap; L1-H13 further retrieval; L1-H1 separate LLM; L1-H2 dedupe/rebuild |
 | Storage    | `FsCardStorage` behind `CardStorage`                                                                                                                         | L1-H9 database for multiplayer / production            |
 | Lifecycle  | Prompt inject + Stop reflect follow-up; trust copy in `src/core/inject.ts`; adapters in `src/adapters/`; `knowcards install`                                 | L1-H10…H12 polish; L1-H14 skill + Agent Plugin         |
-| Eval       | Harbor with/without via instruction-inject fork; `repo-map`; `payments-cents`; terminus-2 default. **Primary gate for this slice** (no parallel unit suite). | §4.7 agent A/B (same task; prompt+MCP); Pi target      |
+| Eval       | Harbor with/without via on-disk cards in the with-arm env (same instruction); `repo-map`; `payments-cents`; terminus-2 default. **Primary gate for this slice**. | §4.7 agent A/B (same task; prompt+MCP); Pi target      |
 | CL-bench   | Design ancestor; not wired here                                                                                                                              | Manual runs in sibling repo                            |
 
 

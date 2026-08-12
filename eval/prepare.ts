@@ -5,7 +5,9 @@
  * filesystem layout as production: cards/<notebook-id>/*.md
  * (default notebook under cards/default/).
  *
- * Each template becomes two Harbor tasks:
+ * Each template becomes two Harbor tasks with the same instruction.md.
+ * The with-cards arm copies seed cards into environment/.agents/knowledge_cards
+ * so the agent must retrieve them (not pre-injected into the instruction).
  *   eval/harbor/<task-id>-with-cards
  *   eval/harbor/<task-id>-without-cards
  */
@@ -20,13 +22,15 @@ import {
 } from "node:fs/promises";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
-import { formatCardsForInject } from "../src/core/inject.ts";
 import { openLibrary } from "../src/core/storage.ts";
 import { allCards, type KnowledgeCard } from "../src/core/types/index.ts";
 
 const EVAL_DIR = dirname(fileURLToPath(import.meta.url));
 const TEMPLATES_DIR = join(EVAL_DIR, "templates");
 const HARBOR_DIR = join(EVAL_DIR, "harbor");
+const ENV_CARDS_REL = join("environment", ".agents", "knowledge_cards");
+const WITH_CARDS_AGENTS = `Knowledge cards live in \`.agents/knowledge_cards/\`. Read them before the README. Prefer those facts unless new evidence shows they are wrong.
+`;
 
 export type TaskPair = {
   taskId: string;
@@ -66,7 +70,6 @@ async function writeTask(opts: {
   taskId: string;
   templateDir: string;
   variant: "with-cards" | "without-cards";
-  cards: KnowledgeCard[];
 }): Promise<string> {
   const name = `${opts.taskId}-${opts.variant}`;
   const dest = join(HARBOR_DIR, name);
@@ -79,14 +82,19 @@ async function writeTask(opts: {
     join(opts.templateDir, "instruction.base.md"),
     "utf8",
   );
-  let instruction = base.trimEnd() + "\n";
+  await writeFile(join(dest, "instruction.md"), `${base.trimEnd()}\n`, "utf8");
+
   if (opts.variant === "with-cards") {
-    instruction +=
-      "\n## Trusted memory (knowledge cards)\n\n" +
-      formatCardsForInject(opts.cards).trimEnd() +
-      "\n";
+    const cardsSrc = join(opts.templateDir, "cards");
+    const cardsDest = join(dest, ENV_CARDS_REL);
+    await mkdir(dirname(cardsDest), { recursive: true });
+    await cp(cardsSrc, cardsDest, { recursive: true });
+    await writeFile(
+      join(dest, "environment", "AGENTS.md"),
+      WITH_CARDS_AGENTS,
+      "utf8",
+    );
   }
-  await writeFile(join(dest, "instruction.md"), instruction, "utf8");
 
   const toml = (await readFile(join(opts.templateDir, "task.toml"), "utf8"))
     .replaceAll("{{TASK_NAME}}", name)
@@ -126,13 +134,11 @@ export async function prepareHarborDataset(
       taskId,
       templateDir,
       variant: "with-cards",
-      cards,
     });
     const withoutCards = await writeTask({
       taskId,
       templateDir,
       variant: "without-cards",
-      cards: [],
     });
     tasks.push({ taskId, withCards, withoutCards });
   }
