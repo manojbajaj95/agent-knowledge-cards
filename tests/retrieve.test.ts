@@ -65,4 +65,40 @@ describe("retrieve and inject", () => {
     const hits = [...inject.matchAll(/^\[\d+\] /gm)];
     expect(hits).toHaveLength(INJECT_CARD_CAP);
   });
+
+  test("short query still prefix-matches", async () => {
+    const root = await mkdtemp(join(tmpdir(), "kc-prefix-"));
+    temps.push(root);
+    const dir = join(root, "default");
+    await mkdir(dir, { recursive: true });
+    await writeFile(
+      join(dir, "improving-tests.md"),
+      cardMd("Improving tests", "x"),
+    );
+    await writeFile(join(dir, "other.md"), cardMd("Other note", "unrelated"));
+    const { library } = await openLibrary(root);
+    const cards = queryLibrary(library, "improv");
+    expect(cards.map((c) => c.slug)).toEqual(["improving-tests"]);
+  });
+
+  test("long prompt does not prefix-match filler stems", async () => {
+    const root = await mkdtemp(join(tmpdir(), "kc-long-"));
+    temps.push(root);
+    const dir = join(root, "default");
+    await mkdir(dir, { recursive: true });
+    await writeFile(
+      join(dir, "improving-tests.md"),
+      cardMd("Improving tests", "x"),
+    );
+    await writeFile(
+      join(dir, "retrieve-ranking.md"),
+      cardMd("Retrieve ranking", "retrieve ranking token"),
+    );
+    const { library } = await openLibrary(root);
+    const cards = queryLibrary(
+      library,
+      "Lets improve retrieve functionality suggest a quick improvement",
+    );
+    expect(cards.map((c) => c.slug)).toEqual(["retrieve-ranking"]);
+  });
 });
