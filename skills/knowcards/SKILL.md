@@ -24,7 +24,7 @@ Run from the repo root
 ```bash
 npx knowcards status
 npx knowcards query "<keywords>"
-npx knowcards propose --title "<title>" --use-when "<situation>" "<body>"
+npx knowcards propose --title "<title>" "<body>"
 npx knowcards --root <dir> <command>
 ```
 
@@ -71,7 +71,6 @@ Write one atomic fact per card.
 ```bash
 npx knowcards propose \
   --title "Use bun test in this repo" \
-  --use-when "running or adding tests" \
   "Run tests with bun test; npm test is not the project runner."
 ```
 
@@ -79,7 +78,6 @@ Card shape:
 
 - **Title** — clear and unique. The filename slug comes from the title. Duplicate titles fail.
 - **Body** — one short durable fact. Prefer an imperative action when useful (`Use bun test…`).
-- `--use-when` — when the agent must apply the card.
 
 ## Post-error sequence
 

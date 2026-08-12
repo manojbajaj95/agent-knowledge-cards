@@ -39,7 +39,7 @@ npx knowcards install claude-code
 npx knowcards install codex
 
 # Write a durable fact (creates dirs if needed)
-npx knowcards propose --title "JWT auth header" --use-when auth \
+npx knowcards propose --title "JWT auth header" \
   "JWTs go in the Authorization header"
 
 # Search the local card library
@@ -57,7 +57,6 @@ Cards live at `.agents/knowledge_cards/<notebook-id>/*.md`:
 ```markdown
 ---
 title: Payment amounts are integer cents
-useWhen: touching the payments module
 ---
 
 Amounts are stored as integer cents; never use floating point for money.
