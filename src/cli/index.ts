@@ -1,4 +1,5 @@
 #!/usr/bin/env node
+import { createRequire } from "node:module";
 import { Command } from "commander";
 import { proposeCard } from "../core/ingestion.ts";
 import { queryLibrary } from "../core/retrieval.ts";
@@ -13,11 +14,16 @@ import {
   DEFAULT_NOTEBOOK_ID,
 } from "../core/types/index.ts";
 
+const pkg = createRequire(import.meta.url)("../../package.json") as {
+  version: string;
+};
+
 const program = new Command();
 
 program
   .name("knowcards")
   .description("knowledge cards CLI")
+  .version(pkg.version)
   .option("--root <dir>", "cards root directory", DEFAULT_CARDS_ROOT)
   .showHelpAfterError();
 
