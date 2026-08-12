@@ -271,13 +271,14 @@ Each entry uses this shape:
 
 ### 5.2 L1 — Knowledge cards
 
-L1 is the current product wedge. v0 is filesystem-first: markdown cards under `.agents/knowledge_cards`, propose with required title (slugified filename), MiniSearch (BM25+) query over an in-memory library, inject formatting, and Harbor with/without seeds. Reflection is still TODO.
+L1 is the current product wedge. v0 is filesystem-first: markdown cards under `.agents/knowledge_cards`, propose with required title (slugified filename), MiniSearch (BM25+) query over an in-memory library, inject formatting, Harbor with/without seeds, and **agent-follow-up reflection** via host Stop hooks (`knowcards install`). Separate-LLM notebook rebuild and dedupe/merge remain open.
 
 #### L1-H1 — Real LLM reflection
 
 - **Knob:** reflection
-- **Why it can help:** Stub reflect truncates an episode. A real reflect pass can rebuild a useful notebook from a full episode, as in CL-bench.
-- **How to A/B:** same multi-session or reflect-then-reuse setup; arm A uses LLM reflect; arm B uses stub or no reflect. Measure phase-two reward and cost.
+- **Why it can help:** A dedicated reflector LLM can rebuild a notebook from a full episode, as in CL-bench, without relying on the primary agent’s Stop turn.
+- **Status:** Deferred. v0 uses primary-agent follow-up (no bundled model). Keep this hypothesis for a later A/B against agent-follow-up.
+- **How to A/B:** same multi-session or reflect-then-reuse setup; arm A uses LLM reflect; arm B uses agent-follow-up or no reflect. Measure phase-two reward and cost.
 - **Cite:** [continual-learning-bench knowledge_cards](https://github.com/pgasawa/continual-learning-bench/pull/11); cq `/reflect`.
 
 
@@ -286,6 +287,7 @@ L1 is the current product wedge. v0 is filesystem-first: markdown cards under `.
 
 - **Knob:** reflection
 - **Why it can help:** Append-only notebooks grow noise. A rebuild can merge duplicates and drop dead cards.
+- **Status:** v0 is append-only via agent `propose`. Near-duplicates after automatic reflect are accepted for now; tackle here later.
 - **How to A/B:** arm A rebuilds the notebook each reflect; arm B only appends. Measure notebook size, reward, and tokens on a fixed task set.
 - **Cite:** CL-bench notebook rebuild pattern.
 
@@ -375,9 +377,12 @@ L1 is the current product wedge. v0 is filesystem-first: markdown cards under `.
 #### L1-H12 — Session hooks adapter
 
 - **Knob:** adapters
-- **Why it can help:** SessionStart inject and Stop reflect close the loop without a human command.
+- **Why it can help:** First-prompt inject and Stop reflect close the loop without a human command.
+- **Status:** Shipped for Claude Code, Cursor, and Codex via `knowcards install` + `src/adapters/*` (agent-follow-up reflect; no `knowcards hook` CLI).
+- **Host notes:** Cursor `beforeSubmitPrompt` cannot inject context — inject writes `.cursor/rules/knowcards-context.mdc`. Codex Stop uses `decision: "block"` + `reason`; hooks on by default. Claude Code Stop prefers `hookSpecificOutput.additionalContext`.
+- **Deferred:** near-duplicate merge after reflect; once-per-session inject budgets.
 - **How to A/B:** arm A uses hooks; arm B uses manual or instruction-only memory.
-- **Cite:** `[src/lifecycle/session.ts](src/lifecycle/session.ts)`; claude-mem lifecycle hooks; greplica Cursor/Codex hooks.
+- **Cite:** `[src/lifecycle/session.ts](src/lifecycle/session.ts)`; `[src/adapters/](src/adapters/)`; claude-mem lifecycle hooks; greplica Cursor/Codex hooks.
 
 
 
@@ -530,6 +535,8 @@ Always eval L4 under the same pinned Harbor + Pi stack as L1–L3.
 
 - **Knob:** reflection
 - **Why it can help:** Catch learnings the in-flow path missed.
+- **Status:** Shipped as Stop follow-up: host continues with default/`REFLECT.md` prompt; the primary agent proposes cards. No bundled LLM.
+- **Deferred:** dedupe/merge of near-duplicate cards; full notebook rebuild (see L1-H2); separate-LLM reflect (L1-H1).
 - **How to A/B:** arm A always reflects at stop; arm B never reflects at stop (in-flow only or none).
 - **Cite:** cq `/reflect`; claude-mem Stop / SessionEnd; greplica working-memory update.
 
@@ -621,9 +628,9 @@ See also `[CONTRIBUTING.md](CONTRIBUTING.md)`.
 
 | Area       | Now                                                                                                                                                          | Roadmap pull                                           |
 | ---------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------ | ------------------------------------------------------ |
-| Core cards | **Filesystem-only** markdown under `.agents/knowledge_cards`; propose+title→slug; MiniSearch BM25+ retrieval; reflect TODO                                   | L1 hypotheses; L1-H9 DB swap; L1-H13 further retrieval |
+| Core cards | **Filesystem-only** markdown under `.agents/knowledge_cards`; propose+title→slug; MiniSearch BM25+ retrieval; agent-follow-up reflect (`REFLECT.md` override) | L1 hypotheses; L1-H9 DB swap; L1-H13 further retrieval; L1-H1 separate LLM; L1-H2 dedupe/rebuild |
 | Storage    | `FsCardStorage` behind `CardStorage`                                                                                                                         | L1-H9 database for multiplayer / production            |
-| Lifecycle  | Session hooks + message inject; trust copy in `src/core/inject.ts`                                                                                           | L1-H10…H12; L1-H14 skill + Agent Plugin                |
+| Lifecycle  | Prompt inject + Stop reflect follow-up; trust copy in `src/core/inject.ts`; adapters in `src/adapters/`; `knowcards install`                                 | L1-H10…H12 polish; L1-H14 skill + Agent Plugin         |
 | Eval       | Harbor with/without via instruction-inject fork; `repo-map`; `payments-cents`; terminus-2 default. **Primary gate for this slice** (no parallel unit suite). | §4.7 agent A/B (same task; prompt+MCP); Pi target      |
 | CL-bench   | Design ancestor; not wired here                                                                                                                              | Manual runs in sibling repo                            |
 

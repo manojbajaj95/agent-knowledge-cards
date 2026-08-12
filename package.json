@@ -11,7 +11,13 @@
       "types": "./dist/index.d.ts",
       "import": "./dist/index.js",
       "default": "./dist/index.js"
-    }
+    },
+    "./adapters/claude-code-inject": "./dist/adapters/claude-code-inject.js",
+    "./adapters/claude-code-reflect": "./dist/adapters/claude-code-reflect.js",
+    "./adapters/cursor-inject": "./dist/adapters/cursor-inject.js",
+    "./adapters/cursor-reflect": "./dist/adapters/cursor-reflect.js",
+    "./adapters/codex-inject": "./dist/adapters/codex-inject.js",
+    "./adapters/codex-reflect": "./dist/adapters/codex-reflect.js"
   },
   "bin": {
     "knowcards": "./dist/cli/index.js"
@@ -47,7 +53,7 @@
   "scripts": {
     "knowcards": "bun run src/cli/index.ts",
     "mcp": "bun run src/cli/index.ts mcp",
-    "build": "tsc -p tsconfig.build.json",
+    "build": "tsc -p tsconfig.build.json && mkdir -p dist/core/prompts && cp src/core/prompts/default-reflect.md dist/core/prompts/",
     "prepublishOnly": "bun run build",
     "test": "bun test tests/eval.test.ts",
     "typecheck": "tsc --noEmit",

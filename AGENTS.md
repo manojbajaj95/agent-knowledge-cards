@@ -10,10 +10,11 @@ Conventions for agents working in this repo.
 
 ## Layout
 
-- `src/core/` — pure-ish functions (ingest, retrieve, inject wording, reflect stub) + abstract storage. Host-agnostic.
-- `src/cli/` — thin CLI over core (`init`, `status`, `query`, `propose`, `mcp`).
+- `src/core/` — pure-ish functions (ingest, retrieve, inject wording, reflect prompts) + abstract storage. Host-agnostic.
+- `src/cli/` — thin CLI over core (`install`, `status`, `query`, `propose`, `mcp`).
+- `src/adapters/` — runnable host hook entrypoints (Claude Code / Cursor / Codex). Not CLI subcommands.
 - `src/mcp/` — MCP stdio server (`@modelcontextprotocol/sdk`); tool logic in `tools.ts`.
-- `src/lifecycle/` — session hooks + message-list inject. Keep thin.
+- `src/lifecycle/` — session prompt inject + Stop reflect follow-up text. Keep thin.
 - `eval/` — Harbor with/without cards A/B (`eval:prepare` / `eval:run` / `eval:compare`). **Primary validation** for this slice (manual; not CI).
 - `tests/eval.test.ts` — offline checks for the eval pipeline (prepare / metrics / compare). No separate unit-test suite.
 - `dist/` — build output for npm / `npx` (do not edit; emit with `bun run build`).
@@ -31,6 +32,7 @@ bun test                 # eval pipeline offline checks only
 bun run typecheck
 bun run lint
 bun run build
+bun run knowcards install cursor|claude-code|codex
 bun run knowcards status|query|propose|mcp
 bun run eval:prepare     # Harbor — manual
 bun run eval:run -- --task repo-map --agent oracle
