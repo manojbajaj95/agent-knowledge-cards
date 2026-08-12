@@ -163,12 +163,18 @@ export async function installHost(
     case "claude-code":
       files = await installClaudeCode(cwd);
       notes.push("Merged UserPromptSubmit + Stop into .claude/settings.json");
+      notes.push(
+        "Hook commands use cwd-relative dist/ or node_modules/knowcards paths",
+      );
       break;
     case "cursor":
       files = await installCursor(cwd);
       notes.push("Merged beforeSubmitPrompt + stop into .cursor/hooks.json");
       notes.push(
         "Inject writes .cursor/rules/knowcards-context.mdc (Cursor hooks cannot inject context)",
+      );
+      notes.push(
+        "Short follow-ups (< 3 words) skip rewrite so the last inject stays",
       );
       break;
     case "codex":

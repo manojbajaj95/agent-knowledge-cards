@@ -15,20 +15,27 @@ const prompt =
   pickString(payload, ["prompt", "user_prompt", "content", "message"]) ?? "";
 const cwd = process.cwd();
 
-const inject = await onSessionPrompt(prompt);
-const body = [
-  "---",
-  "description: Knowcards trusted memory (auto-injected; do not edit by hand)",
-  "alwaysApply: true",
-  "---",
-  "",
-  inject,
-  "",
-].join("\n");
+// Keep the last inject when the prompt is too short to retrieve well
+// ("ok", "do it") — rewriting would wipe useful cards.
+const words = prompt.trim().split(/\s+/).filter(Boolean);
+if (words.length < 3) {
+  writeJson({ continue: true });
+} else {
+  const inject = await onSessionPrompt(prompt);
+  const body = [
+    "---",
+    "description: Knowcards trusted memory (auto-injected; do not edit by hand)",
+    "alwaysApply: true",
+    "---",
+    "",
+    inject,
+    "",
+  ].join("\n");
 
-const outPath = join(cwd, CURSOR_RULE_REL);
-await mkdir(join(cwd, ".cursor", "rules"), { recursive: true });
-await writeFile(outPath, body, "utf8");
+  const outPath = join(cwd, CURSOR_RULE_REL);
+  await mkdir(join(cwd, ".cursor", "rules"), { recursive: true });
+  await writeFile(outPath, body, "utf8");
 
-// beforeSubmitPrompt only supports continue / user_message
-writeJson({ continue: true });
+  // beforeSubmitPrompt only supports continue / user_message
+  writeJson({ continue: true });
+}
