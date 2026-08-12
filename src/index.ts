@@ -9,7 +9,11 @@ export {
   TRUST_REMINDER,
 } from "./core/inject.ts";
 export { parseCardMarkdown, serializeCardMarkdown } from "./core/markdown.ts";
-export { reflect } from "./core/reflection.ts";
+export {
+  formatReflectFollowup,
+  loadReflectPrompt,
+  reflect,
+} from "./core/reflection.ts";
 export { getCard, queryCards, queryLibrary } from "./core/retrieval.ts";
 export { reciprocalRankFusion } from "./core/rrf.ts";
 export { slugify } from "./core/slug.ts";
@@ -33,4 +37,10 @@ export {
   withNotebook,
 } from "./core/types/index.ts";
 export { injectCardsIntoMessages } from "./lifecycle/messages.ts";
-export { onSessionStart, onSessionStop } from "./lifecycle/session.ts";
+export {
+  onSessionPrompt,
+  onSessionStart,
+  onSessionStop,
+  type SessionPromptOptions,
+  type SessionStopOptions,
+} from "./lifecycle/session.ts";

@@ -1,15 +1,12 @@
 # Lifecycle
 
-Thin host edges for session and message injection. Core stays host-agnostic.
+Thin host edges for session inject and reflect follow-up text. Core stays host-agnostic.
 
-Shared inject wording lives in [`src/core/inject.ts`](../core/inject.ts) (`formatCardsForInject`, trust reminder).
+Shared inject wording lives in [`src/core/inject.ts`](../core/inject.ts). Reflection prompt loading lives in [`src/core/reflection.ts`](../core/reflection.ts). Host envelopes live in [`src/adapters/`](../adapters/).
 
 | Module | Role |
 |--------|------|
-| `session.ts` | SessionStart inject / Stop reflect stubs (reflect TODO) |
+| `session.ts` | `onSessionPrompt` (retrieve + inject) / `onSessionStop` (reflect follow-up string) |
 | `messages.ts` | Insert trusted-memory block into a chat message list |
 
-## TODOs
-
-- Wire real Cursor session hooks
-- Continual-learning-bench message-list wiring
+Wire hosts with `npx knowcards install <claude-code|cursor|codex>`.

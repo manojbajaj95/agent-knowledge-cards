@@ -2,9 +2,14 @@
 
 ### Local-first durable facts for coding agents, reinjected as trusted memory
 
+> **Alpha** — this package is early. The API and host hook shapes may change.
+
 [![npm version](https://img.shields.io/npm/v/knowcards?style=flat-square)](https://www.npmjs.com/package/knowcards)
 [![npm](https://img.shields.io/npm/dm/knowcards?style=flat-square&logo=npm)](https://www.npmjs.com/package/knowcards)
 [![Node](https://img.shields.io/badge/node-%3E%3D20-brightgreen?style=flat-square)](https://nodejs.org/)
+[![Claude Code](https://img.shields.io/badge/Claude%20Code-hooks-191919?style=flat-square)](https://code.claude.com/docs/en/hooks)
+[![Codex](https://img.shields.io/badge/Codex-hooks-412991?style=flat-square)](https://developers.openai.com/codex/hooks)
+[![Cursor](https://img.shields.io/badge/Cursor-hooks-000000?style=flat-square)](https://cursor.com/docs/hooks)
 [![license](https://img.shields.io/github/license/manojbajaj95/agent-knowledge-cards?style=flat-square)](LICENSE)
 
 [Highlights](#highlights) · [Quick start](#quick-start) · [Agent protocol](#agent-protocol) · [How it works](#how-it-works) · [Benchmarks](#benchmarks) · [Docs](#docs)
@@ -13,11 +18,11 @@
 
 ## Highlights
 
-> **Knowcards = project-local markdown facts + a query/propose loop agents actually follow.**
+> **Knowcards = project-local markdown facts + automatic inject/reflect on supported hosts.**
 >
 > - **Filesystem-first** — cards are plain markdown under `.agents/knowledge_cards`. No DB, no vectors.
 > - **Trusted memory** — hits are preferred over rediscovery or a conflicting README unless the card is stale.
-> - **Host edges** — CLI for humans, MCP for agents; same core either way.
+> - **Host edges** — `install` wires Claude Code / Codex / Cursor hooks; CLI and MCP remain for manual use.
 
 Coding agents forget between sessions. They re-grep the tree, re-read the README, and still miss the constraint that mattered last time. That wastes tokens and wall clock — and fails when the workspace is wrong.
 
@@ -28,6 +33,11 @@ Knowcards keeps those facts as local cards and reinjects them. The agent prefers
 ## Quick start
 
 ```bash
+# Install automatic inject + reflect hooks (pick your host)
+npx knowcards install cursor
+npx knowcards install claude-code
+npx knowcards install codex
+
 # Write a durable fact (creates dirs if needed)
 npx knowcards propose --title "JWT auth header" --use-when auth \
   "JWTs go in the Authorization header"
@@ -53,6 +63,8 @@ useWhen: touching the payments module
 Amounts are stored as integer cents; never use floating point for money.
 ```
 
+Optional: put a custom reflection prompt in project-root `REFLECT.md`. If missing, knowcards uses the packaged default.
+
 ### MCP
 
 ```json
@@ -66,13 +78,13 @@ Amounts are stored as integer cents; never use floating point for money.
 }
 ```
 
-Install the [knowcards skill](skills/knowcards/SKILL.md) (or equivalent host instructions) so the agent runs the query/propose loop without being asked.
+Install the [knowcards skill](skills/knowcards/SKILL.md) (or equivalent host instructions) so the agent can still query/propose mid-session without hooks.
 
 ---
 
 ## Agent protocol
 
-Memory only helps if the agent uses it. The loop:
+With hooks installed, inject and end-of-session reflect run automatically. The manual loop still works:
 
 1. **Before acting** — `npx knowcards query "<keywords>"` (or the MCP tool). Skip only for routine edits in code you already hold.
 2. **Apply hits** — Prefer card facts. Verify against the repo when a card may be old.
@@ -85,19 +97,23 @@ Do not propose plans, unverified guesses, or near-duplicates. Query first; if a 
 ## How it works
 
 ```
+first prompt → retrieve → inject
+session stop → reflect follow-up → agent proposes cards
 propose → store (markdown) → loadAll → retrieve → inject → host
 ```
 
-| Step     | What happens                                                           |
-| -------- | ---------------------------------------------------------------------- |
-| Propose  | Write one fact worth keeping as a card                                 |
-| Store    | One markdown file per card under `.agents/knowledge_cards/<notebook>/` |
-| Load     | Full library loads into memory when the process starts                 |
-| Retrieve | Rank cards for the current query (MiniSearch)                          |
-| Inject   | Host prepends a trusted-memory block to the prompt                     |
-| Prefer   | Agent treats cards as earned memory over README/rediscovery            |
+| Step | What happens |
+| ---- | ------------ |
+| Install | `knowcards install` merges host hooks (Claude Code / Codex / Cursor) |
+| Inject | On the user prompt, retrieve relevant cards and inject trusted memory |
+| Reflect | On Stop, the host continues with a reflection prompt; the **agent** writes cards |
+| Propose | Write one fact worth keeping as a card (CLI, MCP, or reflect turn) |
+| Store | One markdown file per card under `.agents/knowledge_cards/<notebook>/` |
+| Load | Full library loads into memory when the process starts |
+| Retrieve | Rank cards for the current query (MiniSearch) |
+| Prefer | Agent treats cards as earned memory over README/rediscovery |
 
-Core stays host-agnostic (`src/core/`). CLI and MCP are thin edges. Reflect is not available yet — propose mid-session instead.
+Core stays host-agnostic (`src/core/`). Adapters only wrap host hook envelopes. Knowcards does not bundle an LLM — the primary agent always proposes cards.
 
 ---
 

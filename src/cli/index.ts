@@ -102,6 +102,36 @@ program
   );
 
 program
+  .command("install")
+  .description(
+    "install session hooks for a host (claude-code | cursor | codex)",
+  )
+  .argument("<host>", "claude-code | cursor | codex")
+  .action(async (hostArg: string) => {
+    const host = hostArg.trim().toLowerCase();
+    if (host !== "claude-code" && host !== "cursor" && host !== "codex") {
+      console.error(
+        `Unknown host "${hostArg}". Use: claude-code | cursor | codex`,
+      );
+      process.exitCode = 1;
+      return;
+    }
+    const { installHost } = await import("./install.ts");
+    const result = await installHost(host);
+    console.log(
+      JSON.stringify(
+        {
+          installed: result.host,
+          files: result.files,
+          notes: result.notes,
+        },
+        null,
+        2,
+      ),
+    );
+  });
+
+program
   .command("mcp")
   .description("run the knowledge cards MCP server over stdio")
   .action(async () => {
