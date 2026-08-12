@@ -117,21 +117,41 @@ export async function runCursorInject(): Promise<void> {
   });
 }
 
+/** Null when Stop should not continue (already looped, no file edits, empty prompt). */
+export async function reflectFollowupFromPayload(
+  payload: Record<string, unknown>,
+): Promise<string | null> {
+  if (shouldSkipReflect(payload)) return null;
+  const cwd = pickString(payload, ["cwd"]) ?? process.cwd();
+  const followup = await onSessionStop(undefined, { cwd });
+  return followup || null;
+}
+
 export async function runReflect(
   envelope: (followup: string) => unknown,
 ): Promise<void> {
   await withFailOpen(async () => {
-    const payload = parseStdinJson<Record<string, unknown>>();
-    if (shouldSkipReflect(payload)) {
-      writeJson({});
-      return;
-    }
-    const cwd = pickString(payload, ["cwd"]) ?? process.cwd();
-    const followup = await onSessionStop(undefined, { cwd });
+    const followup = await reflectFollowupFromPayload(parseStdinJson());
     if (!followup) {
       writeJson({});
       return;
     }
     writeJson(envelope(followup));
+  });
+}
+
+/**
+ * Claude Code Stop + asyncRewake: exit 2 + stderr wakes the same idle session.
+ * additionalContext on an async Stop waits for the next user prompt, so it misses reflect.
+ */
+export async function runClaudeCodeReflectRewake(): Promise<void> {
+  await withFailOpen(async () => {
+    const followup = await reflectFollowupFromPayload(parseStdinJson());
+    if (!followup) {
+      writeJson({});
+      return;
+    }
+    process.stderr.write(followup.endsWith("\n") ? followup : `${followup}\n`);
+    process.exit(2);
   });
 }

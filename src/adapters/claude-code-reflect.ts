@@ -1,12 +1,8 @@
 #!/usr/bin/env node
 /**
- * Claude Code Stop → additionalContext reflect follow-up (agent writes cards).
+ * Claude Code Stop → asyncRewake (exit 2 + stderr) so reflect continues
+ * the same idle session (KV cache) after the user-facing turn ends.
  */
-import { runReflect } from "./run.ts";
+import { runClaudeCodeReflectRewake } from "./run.ts";
 
-await runReflect((followup) => ({
-  hookSpecificOutput: {
-    hookEventName: "Stop",
-    additionalContext: followup,
-  },
-}));
+await runClaudeCodeReflectRewake();

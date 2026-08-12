@@ -2,7 +2,10 @@ import { afterEach, describe, expect, test } from "bun:test";
 import { mkdir, mkdtemp, rm, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
-import { shouldSkipReflect } from "../src/adapters/run.ts";
+import {
+  reflectFollowupFromPayload,
+  shouldSkipReflect,
+} from "../src/adapters/run.ts";
 import { formatCardsForInject, slugsFromInject } from "../src/core/inject.ts";
 import { queryLibrary } from "../src/core/retrieval.ts";
 import { openLibrary } from "../src/core/storage.ts";
@@ -166,5 +169,12 @@ describe("retrieve and inject", () => {
     const path = join(dir, "t.jsonl");
     await writeFile(path, '{"message":{"content":[{"name":"Write"}]}}\n');
     expect(shouldSkipReflect({ transcript_path: path })).toBe(false);
+  });
+
+  test("reflectFollowupFromPayload is null when Stop already looped", async () => {
+    expect(await reflectFollowupFromPayload({ stop_hook_active: true })).toBe(
+      null,
+    );
+    expect(await reflectFollowupFromPayload({ loop_count: 1 })).toBe(null);
   });
 });
