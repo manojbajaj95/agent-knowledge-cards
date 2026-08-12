@@ -63,7 +63,7 @@ program
 
 program
   .command("query")
-  .description("query cards with FTS5 BM25 + RRF")
+  .description("query cards with MiniSearch BM25+ (empty = all)")
   .argument("[q]", "search query (empty = all cards)", "")
   .option("--notebook <id>", "limit to one notebook")
   .action(async (q: string, opts: { notebook?: string }, cmd) => {

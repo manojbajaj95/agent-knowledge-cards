@@ -10,7 +10,10 @@ import {
 } from "../core/reflection.ts";
 import { queryLibrary } from "../core/retrieval.ts";
 import { openLibrary } from "../core/storage.ts";
-import { allCards, DEFAULT_CARDS_ROOT } from "../core/types/index.ts";
+import { DEFAULT_CARDS_ROOT } from "../core/types/index.ts";
+
+/** Max cards per inject. MiniSearch prefix+OR can match most of a small library. */
+export const INJECT_CARD_CAP = 8;
 
 export type SessionPromptOptions = {
   /** Cards root (default `.agents/knowledge_cards`). */
@@ -39,19 +42,8 @@ export async function onSessionPrompt(
     return formatCardsForInject([]);
   }
   const { library } = await openLibrary(root);
-  const cards = queryLibrary(library, q);
+  const cards = queryLibrary(library, q).slice(0, INJECT_CARD_CAP);
   return formatCardsForInject(cards);
-}
-
-/**
- * @deprecated Prefer {@link onSessionPrompt} with the first user message.
- * Loads the full library (no query filter) for legacy callers.
- */
-export async function onSessionStart(
-  root: string = DEFAULT_CARDS_ROOT,
-): Promise<string> {
-  const { library } = await openLibrary(root);
-  return formatCardsForInject(allCards(library));
 }
 
 /**

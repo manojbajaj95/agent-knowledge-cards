@@ -32,7 +32,7 @@ Same coding task, with vs without a knowledge card. `repo-map` measures cost/tim
 
 Details: [`eval/README.md`](eval/README.md). Research map: [`ROADMAP.md`](ROADMAP.md).
 
-`bun test` only covers eval prepare/metrics/compare helpers: not a general unit suite.
+`bun test` covers eval prepare/metrics/compare helpers plus retrieve/inject. Not a general unit suite.
 
 ## Research contributions
 

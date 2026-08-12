@@ -12,10 +12,8 @@ export { parseCardMarkdown, serializeCardMarkdown } from "./core/markdown.ts";
 export {
   formatReflectFollowup,
   loadReflectPrompt,
-  reflect,
 } from "./core/reflection.ts";
 export { getCard, queryCards, queryLibrary } from "./core/retrieval.ts";
-export { reciprocalRankFusion } from "./core/rrf.ts";
 export { slugify } from "./core/slug.ts";
 export {
   type CardStorage,
@@ -27,7 +25,6 @@ export {
   allCards,
   DEFAULT_CARDS_ROOT,
   DEFAULT_NOTEBOOK_ID,
-  type Episode,
   emptyLibrary,
   emptyNotebook,
   getNotebook,
@@ -36,10 +33,9 @@ export {
   type Notebook,
   withNotebook,
 } from "./core/types/index.ts";
-export { injectCardsIntoMessages } from "./lifecycle/messages.ts";
 export {
+  INJECT_CARD_CAP,
   onSessionPrompt,
-  onSessionStart,
   onSessionStop,
   type SessionPromptOptions,
   type SessionStopOptions,

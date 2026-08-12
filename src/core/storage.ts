@@ -62,8 +62,12 @@ export class FsCardStorage implements CardStorage {
       for (const file of files.sort()) {
         if (!file.endsWith(".md") || file.startsWith(".")) continue;
         const slug = file.slice(0, -3);
-        const raw = await readFile(join(notebookPath, file), "utf8");
-        cards.push(parseCardMarkdown(slug, raw));
+        try {
+          const raw = await readFile(join(notebookPath, file), "utf8");
+          cards.push(parseCardMarkdown(slug, raw));
+        } catch {
+          // Skip corrupt files so one bad card cannot blank inject/query.
+        }
       }
       notebooks.push({ id: name, cards });
     }
