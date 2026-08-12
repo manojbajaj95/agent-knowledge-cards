@@ -6,6 +6,6 @@ Shared inject wording lives in [`src/core/inject.ts`](../core/inject.ts). Reflec
 
 | Module | Role |
 |--------|------|
-| `session.ts` | `onSessionPrompt` (retrieve + inject, cap 8) / `onSessionStop` (reflect follow-up string) |
+| `session.ts` | `onSessionPrompt` (retrieve + inject, count and char caps) / `onSessionStop` (reflect follow-up string) |
 
 Wire hosts with `npx knowcards install <claude-code|cursor|codex>`.

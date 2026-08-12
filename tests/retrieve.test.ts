@@ -5,7 +5,11 @@ import { join } from "node:path";
 import { formatCardsForInject } from "../src/core/inject.ts";
 import { queryLibrary } from "../src/core/retrieval.ts";
 import { openLibrary } from "../src/core/storage.ts";
-import { INJECT_CARD_CAP, onSessionPrompt } from "../src/lifecycle/session.ts";
+import {
+  INJECT_CARD_CAP,
+  INJECT_CHAR_CAP,
+  onSessionPrompt,
+} from "../src/lifecycle/session.ts";
 
 const SAMPLE = "eval/fixtures/sample-library";
 
@@ -100,5 +104,22 @@ describe("retrieve and inject", () => {
       "Lets improve retrieve functionality suggest a quick improvement",
     );
     expect(cards.map((c) => c.slug)).toEqual(["retrieve-ranking"]);
+  });
+
+  test("onSessionPrompt drops cards to stay under char cap", async () => {
+    const root = await mkdtemp(join(tmpdir(), "kc-chars-"));
+    temps.push(root);
+    const dir = join(root, "default");
+    await mkdir(dir, { recursive: true });
+    const body = "token ".repeat(400);
+    for (let i = 0; i < INJECT_CARD_CAP; i++) {
+      await writeFile(
+        join(dir, `token-fact-${i}.md`),
+        cardMd(`Token fact ${i}`, body),
+      );
+    }
+    const inject = await onSessionPrompt("token fact", { root });
+    expect(inject.length).toBeLessThanOrEqual(INJECT_CHAR_CAP);
+    expect(inject).toContain("[1] (token-fact-0)");
   });
 });

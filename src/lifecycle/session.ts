@@ -10,10 +10,21 @@ import {
 } from "../core/reflection.ts";
 import { queryLibrary } from "../core/retrieval.ts";
 import { openLibrary } from "../core/storage.ts";
-import { DEFAULT_CARDS_ROOT } from "../core/types/index.ts";
+import { DEFAULT_CARDS_ROOT, type KnowledgeCard } from "../core/types/index.ts";
 
-/** Max cards per inject. MiniSearch prefix+OR can match most of a small library. */
+/** Max cards per inject. */
 export const INJECT_CARD_CAP = 8;
+
+/** Stay under Cursor/Claude ~10k additionalContext inline cap. */
+export const INJECT_CHAR_CAP = 8000;
+
+function budgetInjectCards(cards: KnowledgeCard[]): KnowledgeCard[] {
+  let out = cards.slice(0, INJECT_CARD_CAP);
+  while (out.length > 1 && formatCardsForInject(out).length > INJECT_CHAR_CAP) {
+    out = out.slice(0, -1);
+  }
+  return out;
+}
 
 export type SessionPromptOptions = {
   /** Cards root (default `.agents/knowledge_cards`). */
@@ -42,7 +53,7 @@ export async function onSessionPrompt(
     return formatCardsForInject([]);
   }
   const { library } = await openLibrary(root);
-  const cards = queryLibrary(library, q).slice(0, INJECT_CARD_CAP);
+  const cards = budgetInjectCards(queryLibrary(library, q));
   return formatCardsForInject(cards);
 }
 

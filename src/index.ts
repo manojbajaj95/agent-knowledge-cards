@@ -35,6 +35,7 @@ export {
 } from "./core/types/index.ts";
 export {
   INJECT_CARD_CAP,
+  INJECT_CHAR_CAP,
   onSessionPrompt,
   onSessionStop,
   type SessionPromptOptions,
