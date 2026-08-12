@@ -8,6 +8,9 @@ node_modules
 # Harbor eval job outputs
 eval/jobs/
 
+# generated Harbor dataset (eval:prepare)
+eval/harbor/
+
 # output
 out
 dist
