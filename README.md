@@ -112,7 +112,41 @@ propose → store (markdown) → loadAll → retrieve → inject → host
 | Retrieve | Rank cards for the current query (MiniSearch) |
 | Prefer | Agent treats cards as earned memory over README/rediscovery |
 
-Core stays host-agnostic (`src/core/`). Adapters only wrap host hook envelopes. Knowcards does not bundle an LLM — the primary agent always proposes cards.
+Knowcards does not bundle an LLM — the primary agent always proposes cards.
+
+### Product
+
+Two boxes:
+
+- **Memory** owns the units and the ops: init, ingest (store), storage, retrieve, maintain, reflect (extract / promote).
+- **Adapters** are how a host uses memory: **hooks**, **plugin**, **MCP**. `knowcards install` wires hooks only.
+
+Only **L1** (knowledge cards) is in code today.
+
+```
+                 ▲
+                /L3\     weights
+               /----\
+              /  L2  \   compiled: procedural skill · wiki · graph
+             /--------\
+            /    L1    \ atomic units (knowledge cards)
+           /------------\
+          /      L0      \ chats (host sessions; we do not store these)
+         ----------------
+```
+
+**Reflect** extracts from the layer below and writes the layer above:
+
+1. **Reflect to build cards** (v0) — the live chat is the source. Stop continues the session with a reflect prompt. The agent **ingests** cards via `propose`.
+2. **Reflect to build a procedural skill** (later) — cards that describe a repeat procedure compile into an L2 skill.
+
+**Ingest** is how you store a unit at the current layer (`propose` today). **Init** is a first fill for a new repo (for example, onboard and build a first wiki). Init is not wired; `propose` still creates card dirs. The CLI `init` command is hidden.
+
+### Code layout
+
+- `src/core/` and `src/lifecycle/` — memory (cards, retrieve, ingest, reflect prompt)
+- `src/adapters/` — host hook envelopes (Claude Code / Cursor / Codex)
+- `src/mcp/` and `src/cli/` — memory API; `install` is adapter wiring
 
 ---
 
@@ -138,7 +172,7 @@ Harbor evals are the primary product judge for this slice (manual; not CI). See 
 | Document                         | Contents                                      |
 | -------------------------------- | --------------------------------------------- |
 | [`CONTRIBUTING.md`](CONTRIBUTING.md) | Setup, Harbor evals, how to contribute     |
-| [`ROADMAP.md`](ROADMAP.md)       | Research map and layer hypotheses             |
+| [`ROADMAP.md`](ROADMAP.md)       | Testable knobs and A/B hypotheses             |
 | [`AGENTS.md`](AGENTS.md)         | Conventions for agents working in this repo   |
 | [`eval/README.md`](eval/README.md) | Harbor with/without cards A/B               |
 | [`skills/knowcards/SKILL.md`](skills/knowcards/SKILL.md) | Agent skill: when to query / propose |

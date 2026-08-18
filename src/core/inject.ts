@@ -12,7 +12,7 @@ export const TRUST_REMINDER =
 
 /** Title-first inject: fetch the body with query/MCP when needed. */
 export const INJECT_DRILLDOWN =
-  "Full card text is on disk. Use `npx knowcards query` or the knowcards MCP `query` tool for a body.";
+  "Use `npx knowcards query` or the knowcards MCP `query` tool for a body.";
 
 /**
  * Format cards for injection (title + use-when; no body).

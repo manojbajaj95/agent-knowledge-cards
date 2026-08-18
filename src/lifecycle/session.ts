@@ -1,5 +1,5 @@
 /**
- * Session lifecycle helpers for coding agents (inject on prompt, reflect on stop).
+ * Memory session API: retrieve + format on prompt, reflect follow-up on stop.
  * Host adapters wrap these strings into Claude Code / Cursor / Codex envelopes.
  */
 
@@ -35,6 +35,12 @@ export type SessionPromptOptions = {
   skipSlugs?: Iterable<string>;
 };
 
+/** Retrieve + format for a prompt. Empty `text` means skip host inject. */
+export type SessionPromptResult = {
+  text: string;
+  slugs: string[];
+};
+
 export type SessionStopOptions = {
   /** Project cwd — used to load `REFLECT.md` override. */
   cwd?: string;
@@ -43,21 +49,25 @@ export type SessionStopOptions = {
 
 /**
  * First-prompt inject: retrieve cards for the user message and format trusted memory.
- * Empty query, no hits, or all hits skipped yields "" (hosts skip additionalContext).
+ * Empty query, no hits, or all hits skipped yields `{ text: "", slugs: [] }`
+ * (hosts skip additionalContext).
  */
 export async function onSessionPrompt(
   userText: string,
   options: SessionPromptOptions = {},
-): Promise<string> {
+): Promise<SessionPromptResult> {
   const root = options.root ?? DEFAULT_CARDS_ROOT;
   const q = userText.trim();
-  if (!q) return "";
+  if (!q) return { text: "", slugs: [] };
   const skip = new Set(options.skipSlugs ?? []);
   const { library } = await openLibrary(root);
   const cards = budgetInjectCards(
     queryLibrary(library, q).filter((c) => !skip.has(c.slug)),
   );
-  return formatCardsForInject(cards);
+  return {
+    text: formatCardsForInject(cards),
+    slugs: cards.map((c) => c.slug),
+  };
 }
 
 /**

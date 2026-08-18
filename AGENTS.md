@@ -10,18 +10,20 @@ Conventions for agents working in this repo.
 
 ## Layout
 
-- `src/core/` — pure-ish functions (ingest, retrieve, inject wording, reflect prompts) + abstract storage. Host-agnostic.
-- `src/cli/` — thin CLI over core (`install`, `status`, `query`, `propose`, `mcp`).
-- `src/adapters/` — runnable host hook entrypoints (Claude Code / Cursor / Codex). Not CLI subcommands.
+Two boxes: **memory** (units, ingest, retrieve, reflect) and **adapters** (how a host uses memory).
+
+- `src/core/` — L1 memory internals (ingest, retrieve, inject wording, reflect prompts) + abstract storage. Host-agnostic.
+- `src/lifecycle/` — session retrieve + reflect follow-up strings. Memory, not a host SDK.
+- `src/cli/` — thin CLI over memory (`status`, `query`, `propose`, `mcp`) plus `install` (adapter wiring). `init` is hidden; propose creates dirs.
+- `src/adapters/` — host hook envelopes (Claude Code / Cursor / Codex). Do not import `src/core`.
 - `src/mcp/` — MCP stdio server (`@modelcontextprotocol/sdk`); tool logic in `tools.ts`.
-- `src/lifecycle/` — session prompt inject + Stop reflect follow-up text. Keep thin.
 - `eval/` — Harbor with/without cards A/B (`eval:prepare` / `eval:run` / `eval:compare`). **Primary validation** for this slice (manual; not CI).
 - `tests/eval.test.ts` — offline checks for the eval pipeline (prepare / metrics / compare). No separate unit-test suite.
 - `dist/` — build output for npm / `npx` (do not edit; emit with `bun run build`).
 
 ## On-disk cards
 
-**Filesystem-first:** cards are local markdown only (`.agents/knowledge_cards/<notebook-id>/*.md`). No DB backend yet. `propose` creates notebook dirs as needed (`init` is parked). Process start loads the full library into memory via `openLibrary`.
+**Filesystem-first:** cards are local markdown only (`.agents/knowledge_cards/<notebook-id>/*.md`). No DB backend yet. `propose` creates notebook dirs as needed (`init` is hidden; not a required step). Process start loads the full library into memory via `openLibrary`.
 
 ## Commands
 
@@ -44,7 +46,7 @@ Use **bun** for local scripts (`bun test`, `bun run …`). The published package
 ## Rules
 
 1. Keep core free of MCP SDK and Cursor APIs. Storage I/O lives behind `CardStorage`.
-2. Lifecycle and MCP wrap core; do not put host APIs into core (inject *wording* in `src/core/inject.ts` is fine; Cursor/MCP SDKs are not).
+2. Lifecycle and MCP wrap core; adapters wrap host envelopes only. Do not import `src/core` from `src/adapters`. Inject *wording* in `src/core/inject.ts` is fine; Cursor/MCP SDKs are not.
 3. Do not add vectors, graphs, or hybrid search to core without discussion. See [ROADMAP.md](ROADMAP.md).
 4. Prefer the smallest change that makes the feature exist; polish later.
 5. Conventional Commits for git messages (`feat:`, `fix:`, `chore:`, …) — Release Please drives versions from these.

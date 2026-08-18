@@ -38,7 +38,8 @@ describe("retrieve and inject", () => {
 
   test("empty prompt injects nothing", async () => {
     const inject = await onSessionPrompt("  ", { root: SAMPLE });
-    expect(inject).toBe("");
+    expect(inject.text).toBe("");
+    expect(inject.slugs).toEqual([]);
   });
 
   test("payments query ranks integer-cents first", async () => {
@@ -70,8 +71,9 @@ describe("retrieve and inject", () => {
       );
     }
     const inject = await onSessionPrompt("alpha", { root });
-    const hits = [...inject.matchAll(/^\[\d+\] /gm)];
+    const hits = [...inject.text.matchAll(/^\[\d+\] /gm)];
     expect(hits).toHaveLength(INJECT_CARD_CAP);
+    expect(inject.slugs).toHaveLength(INJECT_CARD_CAP);
   });
 
   test("short query still prefix-matches", async () => {
@@ -123,8 +125,8 @@ describe("retrieve and inject", () => {
       );
     }
     const inject = await onSessionPrompt("token fact", { root });
-    expect(inject.length).toBeLessThanOrEqual(INJECT_CHAR_CAP);
-    expect(inject).toContain("[1] (token-fact-0)");
+    expect(inject.text.length).toBeLessThanOrEqual(INJECT_CHAR_CAP);
+    expect(inject.text).toContain("[1] (token-fact-0)");
   });
 
   test("formatCardsForInject is title-first", () => {
@@ -150,7 +152,8 @@ describe("retrieve and inject", () => {
       root: SAMPLE,
       skipSlugs: ["integer-cents"],
     });
-    expect(inject).not.toContain("(integer-cents)");
+    expect(inject.text).not.toContain("(integer-cents)");
+    expect(inject.slugs).not.toContain("integer-cents");
   });
 
   test("shouldSkipReflect when transcript has no file edits", async () => {

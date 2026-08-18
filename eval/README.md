@@ -17,7 +17,7 @@ Default agent/model: `terminus-2` + `openai/gpt-5.6-luna`.
 | with | Required system/prompt for knowledge cards + MCP (`npx knowcards mcp`) + tools to query/propose |
 | without | Same base agent/model, no cards prompt, no MCP/tools |
 
-Cards stay on disk in the sandbox (or host-mounted library); the with-arm agent must retrieve/inject via tools. Tracked under roadmap §4.7. HTTP MCP sidecar + same-task agent kwargs are the remaining gap (knowcards MCP is stdio; Harbor MCP examples use streamable-http).
+Cards stay on disk in the sandbox (or host-mounted library); the with-arm agent must retrieve/inject via tools. Target A/B is tracked under ROADMAP knobs `mcp` / `retrieve`. HTTP MCP sidecar + same-task agent kwargs are the remaining gap (knowcards MCP is stdio; Harbor MCP examples use streamable-http).
 
 ## Tasks
 

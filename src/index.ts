@@ -41,5 +41,6 @@ export {
   onSessionPrompt,
   onSessionStop,
   type SessionPromptOptions,
+  type SessionPromptResult,
   type SessionStopOptions,
 } from "./lifecycle/session.ts";

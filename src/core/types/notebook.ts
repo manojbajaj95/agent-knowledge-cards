@@ -1,6 +1,6 @@
 import type { KnowledgeCard } from "./knowledge-card.ts";
 
-/** Notebook id; default notebook dirs are created on propose (init parked). */
+/** Notebook id; default notebook dirs are created on propose (CLI init is hidden). */
 export const DEFAULT_NOTEBOOK_ID = "default";
 
 /** A domain notebook: subdirectory under the cards root. */
