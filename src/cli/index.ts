@@ -28,9 +28,9 @@ program
   .showHelpAfterError();
 
 program
-  .command("init")
+  .command("init", { hidden: true })
   .description(
-    "(parked) create cards root and default notebook; prefer propose which mkdir -p",
+    "ensure cards root and default notebook (optional; propose also creates dirs)",
   )
   .action(async (_opts, cmd) => {
     const { root } = cmd.optsWithGlobals() as { root: string };

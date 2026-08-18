@@ -4,7 +4,6 @@
 import { readFileSync } from "node:fs";
 import { mkdir, readFile, writeFile } from "node:fs/promises";
 import { join } from "node:path";
-import { slugsFromInject } from "../core/inject.ts";
 import {
   type HookState,
   loadHookState,
@@ -60,20 +59,20 @@ export async function runAdditiveInject(
     const state = await loadHookState();
     const skipSlugs = skipSlugsForSession(sessionId, state);
     const inject = await onSessionPrompt(prompt, { skipSlugs });
-    if (!inject) {
+    if (!inject.text) {
       writeJson({});
       return;
     }
-    if (!sessionId && state?.lastInject === inject) {
+    if (!sessionId && state?.lastInject === inject.text) {
       writeJson({});
       return;
     }
     await saveHookState({
       sessionId: sessionId || state?.sessionId,
-      injectedSlugs: [...new Set([...skipSlugs, ...slugsFromInject(inject)])],
-      lastInject: inject,
+      injectedSlugs: [...new Set([...skipSlugs, ...inject.slugs])],
+      lastInject: inject.text,
     });
-    writeJson(envelope(inject));
+    writeJson(envelope(inject.text));
   });
 }
 
@@ -89,7 +88,7 @@ export async function runCursorInject(): Promise<void> {
       return;
     }
     const inject = await onSessionPrompt(prompt);
-    if (!inject) {
+    if (!inject.text) {
       writeJson({ continue: true });
       return;
     }
@@ -99,7 +98,7 @@ export async function runCursorInject(): Promise<void> {
       "alwaysApply: true",
       "---",
       "",
-      inject,
+      inject.text,
       "",
     ].join("\n");
     const outPath = join(process.cwd(), CURSOR_RULE_REL);
