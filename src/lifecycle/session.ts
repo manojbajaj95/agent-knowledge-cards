@@ -10,13 +10,29 @@ import {
 } from "../core/reflection.ts";
 import { queryLibrary } from "../core/retrieval.ts";
 import { openLibrary } from "../core/storage.ts";
-import { allCards, DEFAULT_CARDS_ROOT } from "../core/types/index.ts";
+import { DEFAULT_CARDS_ROOT, type KnowledgeCard } from "../core/types/index.ts";
+
+/** Max cards per inject. */
+export const INJECT_CARD_CAP = 8;
+
+/** Stay under Cursor/Claude ~10k additionalContext inline cap. */
+export const INJECT_CHAR_CAP = 8000;
+
+function budgetInjectCards(cards: KnowledgeCard[]): KnowledgeCard[] {
+  let out = cards.slice(0, INJECT_CARD_CAP);
+  while (out.length > 1 && formatCardsForInject(out).length > INJECT_CHAR_CAP) {
+    out = out.slice(0, -1);
+  }
+  return out;
+}
 
 export type SessionPromptOptions = {
   /** Cards root (default `.agents/knowledge_cards`). */
   root?: string;
   /** Project cwd for path resolution (unused today; reserved). */
   cwd?: string;
+  /** Additive hosts: omit slugs already injected this session. */
+  skipSlugs?: Iterable<string>;
 };
 
 export type SessionStopOptions = {
@@ -27,7 +43,7 @@ export type SessionStopOptions = {
 
 /**
  * First-prompt inject: retrieve cards for the user message and format trusted memory.
- * Empty / whitespace query yields an empty inject block (does not dump all cards).
+ * Empty query, no hits, or all hits skipped yields "" (hosts skip additionalContext).
  */
 export async function onSessionPrompt(
   userText: string,
@@ -35,23 +51,13 @@ export async function onSessionPrompt(
 ): Promise<string> {
   const root = options.root ?? DEFAULT_CARDS_ROOT;
   const q = userText.trim();
-  if (!q) {
-    return formatCardsForInject([]);
-  }
+  if (!q) return "";
+  const skip = new Set(options.skipSlugs ?? []);
   const { library } = await openLibrary(root);
-  const cards = queryLibrary(library, q);
+  const cards = budgetInjectCards(
+    queryLibrary(library, q).filter((c) => !skip.has(c.slug)),
+  );
   return formatCardsForInject(cards);
-}
-
-/**
- * @deprecated Prefer {@link onSessionPrompt} with the first user message.
- * Loads the full library (no query filter) for legacy callers.
- */
-export async function onSessionStart(
-  root: string = DEFAULT_CARDS_ROOT,
-): Promise<string> {
-  const { library } = await openLibrary(root);
-  return formatCardsForInject(allCards(library));
 }
 
 /**

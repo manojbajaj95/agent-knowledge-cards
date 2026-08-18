@@ -17,11 +17,6 @@ export type KnowledgeLibrary = {
   notebooks: Notebook[];
 };
 
-/** Opaque episode for future reflection (transcript / feedback blob). */
-export type Episode = {
-  text: string;
-};
-
 /** Default on-disk root: one dir per notebook (domain). */
 export const DEFAULT_CARDS_ROOT = ".agents/knowledge_cards";
 

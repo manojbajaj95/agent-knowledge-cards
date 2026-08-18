@@ -59,7 +59,7 @@ export async function toolStatus(args: {
   });
 }
 
-/** Query cards with FTS5 BM25 + RRF. */
+/** Query cards with MiniSearch BM25+ (empty q = all). */
 export async function toolQuery(args: {
   q?: string;
   root?: string;

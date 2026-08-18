@@ -8,11 +8,6 @@ import {
   metricsFromTrial,
 } from "../eval/metrics.ts";
 import { loadTemplateCards, prepareHarborDataset } from "../eval/prepare.ts";
-import {
-  formatCardsForInject,
-  KNOWLEDGE_CARDS_HEADER,
-  TRUST_REMINDER,
-} from "../src/core/inject.ts";
 import { openLibrary } from "../src/core/storage.ts";
 import { allCards } from "../src/core/types/index.ts";
 
@@ -82,9 +77,6 @@ describe("eval prepare", () => {
     expect(library.notebooks.map((n) => n.id)).toEqual(["default"]);
     expect(cards).toHaveLength(3);
     expect(cards.some((c) => c.slug === "integer-cents")).toBe(true);
-    const inject = formatCardsForInject(cards);
-    expect(inject).toContain(KNOWLEDGE_CARDS_HEADER);
-    expect(inject).toContain(TRUST_REMINDER);
   });
 
   test("loadTemplateCards reads payments-cents seed notebook", async () => {
@@ -104,14 +96,39 @@ describe("eval prepare", () => {
       join(withoutCards, "instruction.md"),
     ).text();
 
-    expect(withText).toContain(KNOWLEDGE_CARDS_HEADER);
-    expect(withText).toContain(TRUST_REMINDER);
-    expect(withText).toContain("[1] (integer-cents)");
-    expect(withText).toContain("Payment amounts are integer cents");
-    expect(withText).toContain("Use when: fixing payments or apply_discount");
-    expect(withText).toContain("integer cents");
-    expect(withText).toContain("conflicting README");
-    expect(withoutText).not.toContain(KNOWLEDGE_CARDS_HEADER);
+    expect(withText).toBe(withoutText);
+    expect(withText).toContain("apply_discount");
+    expect(withText).not.toContain("KNOWLEDGE CARDS (trusted memory)");
+    expect(
+      await Bun.file(
+        join(
+          withCards,
+          "environment",
+          ".agents",
+          "knowledge_cards",
+          "default",
+          "integer-cents.md",
+        ),
+      ).exists(),
+    ).toBe(true);
+    expect(
+      await Bun.file(join(withCards, "environment", "AGENTS.md")).text(),
+    ).toContain(".agents/knowledge_cards");
+    expect(
+      await Bun.file(
+        join(
+          withoutCards,
+          "environment",
+          ".agents",
+          "knowledge_cards",
+          "default",
+          "integer-cents.md",
+        ),
+      ).exists(),
+    ).toBe(false);
+    expect(
+      await Bun.file(join(withoutCards, "environment", "AGENTS.md")).exists(),
+    ).toBe(false);
     expect(await Bun.file(join(withCards, "cards")).exists()).toBe(false);
     expect(
       await Bun.file(join(withCards, "environment", "payments.py")).exists(),
@@ -126,16 +143,33 @@ describe("eval prepare", () => {
       join(withoutCards, "instruction.md"),
     ).text();
 
-    expect(withText).toContain(KNOWLEDGE_CARDS_HEADER);
-    expect(withText).toContain("[1] (sku-normalization)");
-    expect(withText).toContain("Live SKU normalize path");
-    expect(withText).toContain(
-      "Use when: fixing EU SKU prefix or normalize_sku",
-    );
-    expect(withText).toContain("core/pipeline/steps/sku_normalize.py");
-    expect(withText).toContain("decoys/handlers/update_sku.py");
-    expect(withoutText).not.toContain(KNOWLEDGE_CARDS_HEADER);
-    expect(withoutText).toContain("EU-WIDGET");
+    expect(withText).toBe(withoutText);
+    expect(withText).toContain("EU-WIDGET");
+    expect(withText).not.toContain("KNOWLEDGE CARDS (trusted memory)");
+    expect(
+      await Bun.file(
+        join(
+          withCards,
+          "environment",
+          ".agents",
+          "knowledge_cards",
+          "default",
+          "sku-normalization.md",
+        ),
+      ).exists(),
+    ).toBe(true);
+    expect(
+      await Bun.file(
+        join(
+          withoutCards,
+          "environment",
+          ".agents",
+          "knowledge_cards",
+          "default",
+          "sku-normalization.md",
+        ),
+      ).exists(),
+    ).toBe(false);
     expect(
       await Bun.file(
         join(

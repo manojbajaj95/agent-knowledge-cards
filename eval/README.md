@@ -8,7 +8,7 @@ Default agent/model: `terminus-2` + `openai/gpt-5.6-luna`.
 
 ## Current vs target A/B
 
-**Today (v0):** prepare forks each template into two Harbor task dirs (`…-with-cards` / `…-without-cards`). Same env/tests/solution and base instruction; the with-cards arm **pre-injects** seed card text into `instruction.md`. Both arms use the same agent. This isolates whether card *content* helps when already in context — not product retrieval/MCP.
+**Today (v0):** prepare forks each template into two Harbor task dirs (`…-with-cards` / `…-without-cards`). Same env/tests/solution and **same** `instruction.md`. The with-cards arm copies seed cards into `environment/.agents/knowledge_cards/` plus a short `AGENTS.md` so the agent must read them. The without-cards arm has neither. This exercises on-disk retrieval, not instruction pre-inject and not MCP.
 
 **Target:** one Harbor task package per family (instruction and env unchanged). A/B by **agent config**:
 
@@ -17,7 +17,7 @@ Default agent/model: `terminus-2` + `openai/gpt-5.6-luna`.
 | with | Required system/prompt for knowledge cards + MCP (`npx knowcards mcp`) + tools to query/propose |
 | without | Same base agent/model, no cards prompt, no MCP/tools |
 
-Cards stay on disk in the sandbox (or host-mounted library); the with-arm agent must retrieve/inject via tools. Tracked under roadmap §4.7.
+Cards stay on disk in the sandbox (or host-mounted library); the with-arm agent must retrieve/inject via tools. Tracked under roadmap §4.7. HTTP MCP sidecar + same-task agent kwargs are the remaining gap (knowcards MCP is stdio; Harbor MCP examples use streamable-http).
 
 ## Tasks
 
@@ -82,7 +82,7 @@ eval/
   run.ts                 # prepare → harbor run ×2 → compare
   compare.ts / metrics.ts
   fixtures/              # sample-library + offline compare fixtures
-  harbor/                # generated dataset
+  harbor/                # generated dataset (gitignored; run eval:prepare)
   jobs/                  # local Harbor outputs (gitignored)
 ```
 

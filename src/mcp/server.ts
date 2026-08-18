@@ -3,14 +3,20 @@
  * Core stays free of the MCP SDK; this module is the host edge.
  */
 
+import { createRequire } from "node:module";
 import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { z } from "zod";
 import { toolInit, toolPropose, toolQuery, toolStatus } from "./tools.ts";
 
+const pkg = createRequire(import.meta.url)("../../package.json") as {
+  name: string;
+  version: string;
+};
+
 export function createKnowledgeCardsServer(): McpServer {
   const server = new McpServer({
-    name: "agent-knowledge-cards",
-    version: "0.0.1",
+    name: pkg.name,
+    version: pkg.version,
   });
 
   server.registerTool(
@@ -44,7 +50,8 @@ export function createKnowledgeCardsServer(): McpServer {
     "query",
     {
       title: "Query knowledge cards",
-      description: "Query knowledge cards with FTS5 BM25 + RRF (empty q = all)",
+      description:
+        "Query knowledge cards with MiniSearch BM25+ (empty q = all)",
       inputSchema: {
         q: z.string().optional().describe("Search query"),
         root: z.string().optional().describe("Cards root directory"),

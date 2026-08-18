@@ -25,7 +25,8 @@
   "files": [
     "dist",
     "LICENSE",
-    "README.md"
+    "README.md",
+    "skills"
   ],
   "engines": {
     "node": ">=20"
@@ -55,7 +56,7 @@
     "mcp": "bun run src/cli/index.ts mcp",
     "build": "tsc -p tsconfig.build.json && mkdir -p dist/core/prompts && cp src/core/prompts/default-reflect.md dist/core/prompts/",
     "prepublishOnly": "bun run build",
-    "test": "bun test tests/eval.test.ts",
+    "test": "bun test tests",
     "typecheck": "tsc --noEmit",
     "lint": "biome check .",
     "lint:fix": "biome check --write .",

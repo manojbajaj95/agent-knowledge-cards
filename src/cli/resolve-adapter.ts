@@ -63,7 +63,14 @@ export function resolveAdapterPath(
   return join(here, "..", "adapters", file);
 }
 
-/** Shell command that runs an adapter with Node. */
+/** Shell command that runs an adapter with Node (cwd-relative when possible). */
 export function adapterCommand(host: HostId, action: AdapterAction): string {
-  return `node ${JSON.stringify(resolveAdapterPath(host, action))}`;
+  const stem = ADAPTER_STEM[host][action];
+  const file = `${stem}.js`;
+  const relative = [
+    join("dist", "adapters", file),
+    join("node_modules", "knowcards", "dist", "adapters", file),
+  ].find((rel) => existsSync(join(process.cwd(), rel)));
+  const path = relative ?? resolveAdapterPath(host, action);
+  return `node ${JSON.stringify(path)}`;
 }

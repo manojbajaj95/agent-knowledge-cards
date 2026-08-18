@@ -206,7 +206,7 @@ Build task families as eval hypotheses. Implement by bandwidth.
 
 Today `[eval/run.ts](eval/run.ts)` defaults to `terminus-2` and `openai/gpt-5.6-luna`.
 
-**Current A/B (v0):** `[eval/prepare.ts](eval/prepare.ts)` materializes two Harbor task dirs per family and pre-injects seed cards into the with-cards `instruction.md`. Same agent both arms. Useful for “does card text help?” — does **not** exercise MCP/retrieval.
+**Current A/B (v0):** `[eval/prepare.ts](eval/prepare.ts)` materializes two Harbor task dirs per family. Same `instruction.md` both arms. With-cards copies seed cards into `environment/.agents/knowledge_cards/` plus `AGENTS.md`. Without-cards has neither. Exercises on-disk retrieval — not MCP/hooks.
 
 **Target A/B:** one Harbor task per family (fixed instruction/env/tests). Arms differ only by agent:
 
@@ -215,7 +215,7 @@ Today `[eval/run.ts](eval/run.ts)` defaults to `terminus-2` and `openai/gpt-5.6-
 
 **Harness target:** Harbor + Pi via ACP, with pinned Harbor and Pi versions. Wire agent A/B (prompt/MCP on vs off) on that stack when ready.
 
-Keep the existing templates as seeds. Until agent A/B lands, keep the instruction-inject fork as the working gate. Log both the old and the new defaults in the run log during the transition. See `[eval/README.md](eval/README.md)`.
+Keep the existing templates as seeds. Until Harbor job-config MCP-on vs MCP-off lands, keep the on-disk with/without fork as the working gate. See `[eval/README.md](eval/README.md)`.
 
 ### 4.8 Experiment run log
 
@@ -297,6 +297,7 @@ L1 is the current product wedge. v0 is filesystem-first: markdown cards under `.
 
 - **Knob:** injection
 - **Why it can help:** Too many cards can hurt. Caps on count and characters keep trusted memory cheap.
+- **Status:** Shipped. `onSessionPrompt` applies `INJECT_CARD_CAP` (8) and `INJECT_CHAR_CAP` (8000) after retrieve. CLI/MCP query stay uncapped.
 - **How to A/B:** arm A uses caps; arm B injects all matches. Same task family.
 - **Cite:** README roadmap item; claude-mem context configuration.
 
@@ -304,9 +305,10 @@ L1 is the current product wedge. v0 is filesystem-first: markdown cards under `.
 
 #### L1-H4 — Progressive disclosure retrieve
 
-- **Knob:** retrieval
+- **Knob:** retrieval / injection
 - **Why it can help:** An index is cheap. Full bodies are expensive. Fetch bodies only for selected ids.
-- **How to A/B:** arm A returns titles/ids first, then bodies on demand; arm B returns full bodies on first query.
+- **Status:** Inject default is **title-first** (slug, title, optional use-when). Full bodies stay on disk; the agent fetches them with `knowcards query` or MCP `query`.
+- **How to A/B:** same task family; arm A title-first inject (current `formatCardsForInject`); arm B full card bodies in the inject block. Harbor with-arm copies full card files to disk — that does not measure this knob. The arms must differ in inject wording (hooks or an equivalent prompt block), then compare reward, cost, and input tokens.
 - **Cite:** [claude-mem](https://github.com/thedotmack/claude-mem) 3-layer search; Tencent progressive disclosure.
 
 
@@ -378,9 +380,9 @@ L1 is the current product wedge. v0 is filesystem-first: markdown cards under `.
 
 - **Knob:** adapters
 - **Why it can help:** First-prompt inject and Stop reflect close the loop without a human command.
-- **Status:** Shipped for Claude Code, Cursor, and Codex via `knowcards install` + `src/adapters/*` (agent-follow-up reflect; no `knowcards hook` CLI).
-- **Host notes:** Cursor `beforeSubmitPrompt` cannot inject context — inject writes `.cursor/rules/knowcards-context.mdc`. Codex Stop uses `decision: "block"` + `reason`; hooks on by default. Claude Code Stop prefers `hookSpecificOutput.additionalContext`.
-- **Deferred:** near-duplicate merge after reflect; once-per-session inject budgets.
+- **Status:** Shipped for Claude Code, Cursor, and Codex via `knowcards install` + `src/adapters/*` (agent-follow-up reflect; no `knowcards hook` CLI). Adapters fail open. Empty retrieve skips additionalContext (Cursor keeps the last rules file). Claude Code / Codex dedupe by session slug so additive `additionalContext` does not restack the same cards. Cursor skips rewrite when the rules file would not change.
+- **Host notes:** Cursor `beforeSubmitPrompt` cannot inject context — inject writes `.cursor/rules/knowcards-context.mdc`. Cursor Stop `followup_message` is a user message (sync; no idle wake). Codex Stop uses `decision: "block"` + `reason` as a new user prompt (sync; async hooks do not start a turn). Claude Code Stop uses `async` + `asyncRewake` and exit 2 + stderr so reflect continues the same idle session (KV cache) without blocking the user-facing turn. Stop skips when `stop_hook_active`, Cursor `loop_count > 0`, or a transcript path has no Write/Edit.
+- **Deferred:** SessionStart re-prime after compact/resume/clear; near-duplicate merge after reflect. Cursor/Codex background same-session reflect needs host APIs ([Cursor forum](https://forum.cursor.com/t/let-a-stop-hook-run-end-of-turn-work-without-rendering-below-the-final-answer/165472), [Codex #38221](https://github.com/openai/codex/issues/38221), [Claude Code #76721](https://github.com/anthropics/claude-code/issues/76721#issuecomment-5269953313)).
 - **How to A/B:** arm A uses hooks; arm B uses manual or instruction-only memory.
 - **Cite:** `[src/lifecycle/session.ts](src/lifecycle/session.ts)`; `[src/adapters/](src/adapters/)`; claude-mem lifecycle hooks; greplica Cursor/Codex hooks.
 
@@ -392,7 +394,7 @@ L1 is the current product wedge. v0 is filesystem-first: markdown cards under `.
 - **Why it can help:** Substring match over loaded cards is weak. Better ranking, FTS, or light semantic match can raise precision and recall without changing card content.
 - **How to A/B:** fixed query set and tasks; arm A uses current substring retrieval; arm B uses the improved retriever. Measure hit rate, injected tokens, reward, and cost.
 - **Cite:** claude-mem SQLite + FTS5; progressive disclosure (L1-H4).
-- **Status:** v0 uses MiniSearch (BM25+) over the in-memory library (filesystem-backed cards). Further gains (boost tuning, budgets, progressive disclosure, embeddings) remain open.
+- **Status:** v0 uses MiniSearch (BM25+) over the in-memory library (filesystem-backed cards). Inject is title-first (L1-H4). Further gains (boost tuning, embeddings) remain open.
 
 
 
@@ -535,7 +537,7 @@ Always eval L4 under the same pinned Harbor + Pi stack as L1–L3.
 
 - **Knob:** reflection
 - **Why it can help:** Catch learnings the in-flow path missed.
-- **Status:** Shipped as Stop follow-up: host continues with default/`REFLECT.md` prompt; the primary agent proposes cards. No bundled LLM.
+- **Status:** Shipped as Stop follow-up: host continues with default/`REFLECT.md` prompt; the primary agent proposes cards. No bundled LLM. Stop is quieter when the host transcript has no Write/Edit (or Cursor `loop_count > 0` / `stop_hook_active`).
 - **Deferred:** dedupe/merge of near-duplicate cards; full notebook rebuild (see L1-H2); separate-LLM reflect (L1-H1).
 - **How to A/B:** arm A always reflects at stop; arm B never reflects at stop (in-flow only or none).
 - **Cite:** cq `/reflect`; claude-mem Stop / SessionEnd; greplica working-memory update.
@@ -597,7 +599,7 @@ Record needs here. Decide the delivery method when you take the task.
 | ------------------------------------------- | ------------------------------------------------------------------------------------- |
 | Durable experiment compare UX               | Run volume will outgrow ad-hoc notes.                                                 |
 | Pi default wired in `[eval/](eval/)`        | Roadmap target is Harbor + Pi; code still defaults to terminus-2.                     |
-| Agent A/B (same task; prompt+MCP on vs off) | v0 forks task dirs and pre-injects cards; target keeps one task and varies the agent. |
+| Agent A/B (same task; prompt+MCP on vs off) | v0 forks task dirs; with-arm has on-disk cards. Target: one task, MCP on vs off.      |
 | Run-log schema v1                           | Ablation fields must stay stable across contributors.                                 |
 | Multi-trial stats helpers                   | Single trials are noisy; families need repeat runs.                                   |
 | How to store L3 artifacts                   | Wiki files vs DB vs hybrid — decide when L3 work starts.                              |
@@ -630,8 +632,8 @@ See also `[CONTRIBUTING.md](CONTRIBUTING.md)`.
 | ---------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------ | ------------------------------------------------------ |
 | Core cards | **Filesystem-only** markdown under `.agents/knowledge_cards`; propose+title→slug; MiniSearch BM25+ retrieval; agent-follow-up reflect (`REFLECT.md` override) | L1 hypotheses; L1-H9 DB swap; L1-H13 further retrieval; L1-H1 separate LLM; L1-H2 dedupe/rebuild |
 | Storage    | `FsCardStorage` behind `CardStorage`                                                                                                                         | L1-H9 database for multiplayer / production            |
-| Lifecycle  | Prompt inject + Stop reflect follow-up; trust copy in `src/core/inject.ts`; adapters in `src/adapters/`; `knowcards install`                                 | L1-H10…H12 polish; L1-H14 skill + Agent Plugin         |
-| Eval       | Harbor with/without via instruction-inject fork; `repo-map`; `payments-cents`; terminus-2 default. **Primary gate for this slice** (no parallel unit suite). | §4.7 agent A/B (same task; prompt+MCP); Pi target      |
+| Lifecycle  | Title-first prompt inject (count/char caps, skip empty, additive slug dedupe); Stop reflect skips when transcript has no edits; adapters fail open | L1-H4 full-body A/B; L1-H10…H12 polish; SessionStart re-prime; L1-H14 skill + Agent Plugin |
+| Eval       | Harbor with/without via on-disk cards in the with-arm env (same instruction); `repo-map`; `payments-cents`; terminus-2 default. **Primary gate for this slice**. | §4.7 agent A/B (same task; prompt+MCP); Pi target      |
 | CL-bench   | Design ancestor; not wired here                                                                                                                              | Manual runs in sibling repo                            |
 
 

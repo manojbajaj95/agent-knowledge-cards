@@ -32,14 +32,14 @@ Same coding task, with vs without a knowledge card. `repo-map` measures cost/tim
 
 Details: [`eval/README.md`](eval/README.md). Research map: [`ROADMAP.md`](ROADMAP.md).
 
-`bun test` only covers eval prepare/metrics/compare helpers: not a general unit suite.
+`bun test` covers eval prepare/metrics/compare helpers plus retrieve/inject. Not a general unit suite.
 
 ## Research contributions
 
 Contributors are welcome. You can help in these ways:
 
 - **Hypotheses**: Add a new entry to [`ROADMAP.md`](ROADMAP.md) (or open an issue that links a draft entry). Name the layer, the knob, the A/B arms, and a cite when you have one.
-- **Plugins / lifecycle**: Wire hosts in `src/adapters/` (hook envelopes) or `src/mcp/`. Keep `src/core` free of host SDKs (Cursor, MCP). Inject prompt wording may live in `src/core/inject.ts`. Install with `knowcards install <host>` only — do not add a `hook` CLI.
+- **Plugins / lifecycle**: Wire hosts in `src/adapters/` (hook envelopes) or `src/mcp/`. Keep `src/core` free of host SDKs (Cursor, MCP). Inject prompt wording may live in `src/core/inject.ts`. Install with `knowcards install <host>` only — do not add a `hook` CLI. Keep inject hooks synchronous. Claude Code Stop may use `asyncRewake`; do not set `async` on Cursor or Codex Stop.
 - **Task families**: Add Harbor tasks under `eval/templates/` so the eval suite can test more memory questions.
 
 Read [`ROADMAP.md`](ROADMAP.md) before large research work. Eval uses Harbor + Pi. Pin harness versions. Log which knob you changed.

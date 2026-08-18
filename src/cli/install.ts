@@ -41,6 +41,7 @@ function mergeNestedCommandHooks(
   existing: unknown,
   command: string,
   action: AdapterAction,
+  extra?: JsonObject,
 ): unknown[] {
   const list = Array.isArray(existing) ? [...existing] : [];
   const filtered = list.filter((entry) => {
@@ -62,6 +63,7 @@ function mergeNestedCommandHooks(
         timeout: action === "inject" ? 30 : 60,
         statusMessage:
           action === "inject" ? "Knowcards inject" : "Knowcards reflect",
+        ...extra,
       },
     ],
   });
@@ -100,6 +102,7 @@ async function installClaudeCode(cwd: string): Promise<string[]> {
     hooks.Stop,
     adapterCommand("claude-code", "reflect"),
     "reflect",
+    { async: true, asyncRewake: true },
   );
 
   settings.hooks = hooks;
@@ -163,6 +166,12 @@ export async function installHost(
     case "claude-code":
       files = await installClaudeCode(cwd);
       notes.push("Merged UserPromptSubmit + Stop into .claude/settings.json");
+      notes.push(
+        "Hook commands use cwd-relative dist/ or node_modules/knowcards paths",
+      );
+      notes.push(
+        "Stop reflect is async + asyncRewake (same session after the turn ends)",
+      );
       break;
     case "cursor":
       files = await installCursor(cwd);
@@ -170,12 +179,21 @@ export async function installHost(
       notes.push(
         "Inject writes .cursor/rules/knowcards-context.mdc (Cursor hooks cannot inject context)",
       );
+      notes.push(
+        "Short follow-ups (< 3 words) skip rewrite so the last inject stays",
+      );
+      notes.push(
+        "Stop followup_message is a user message (host limit; no background wake)",
+      );
       break;
     case "codex":
       files = await installCodex(cwd);
       notes.push("Merged UserPromptSubmit + Stop into .codex/hooks.json");
       notes.push(
         "Codex hooks are on by default; disable with [features] hooks = false",
+      );
+      notes.push(
+        "Stop reflect stays sync: async Codex hooks do not start a new turn",
       );
       break;
     default: {
