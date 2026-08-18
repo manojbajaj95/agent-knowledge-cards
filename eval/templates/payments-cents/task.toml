@@ -3,7 +3,7 @@ schema_version = "1.4"
 [task]
 name = "agent-knowledge-cards/{{TASK_NAME}}"
 version = "1.0.0"
-description = "Fix payments discount math; with/without knowledge card A/B"
+description = "Fix payments discount math; knowcards A/B (skill + CLI)"
 authors = []
 keywords = ["knowledge-cards", "payments", "eval"]
 
@@ -25,3 +25,4 @@ cpus = 1
 memory_mb = 2048
 storage_mb = 10240
 gpus = 0
+skills_dir = "/skills"

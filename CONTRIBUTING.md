@@ -24,11 +24,13 @@ Harbor A/B evals are the primary validation for this slice. They are **manual on
 ```bash
 bun run eval:prepare
 bun run eval:run -- --task repo-map --agent oracle   # sanity, no LLM
-bun run eval:run -- --task repo-map                  # terminus-2 + openai/gpt-5.6-luna
+bun run eval:run -- --task repo-map                  # pi@0.84.2 + openai/gpt-5.6-luna
 bun run eval:run -- --task payments-cents            # correctness under misleading README
 ```
 
-Same coding task, with vs without a knowledge card. `repo-map` measures cost/time/token savings when both arms solve it. `payments-cents` measures correctness when the README is wrong.
+Same coding task, with vs without knowcards (skill + CLI on pinned Pi). `repo-map` measures cost/time/token savings when both arms solve it. `payments-cents` measures correctness when the README is wrong.
+
+A second eval kind (**sequential**: same repo, 3–4 tasks, cards persist) is named in [`eval/README.md`](eval/README.md) but not wired yet.
 
 Details: [`eval/README.md`](eval/README.md). Research map: [`ROADMAP.md`](ROADMAP.md).
 

@@ -33,7 +33,7 @@ describe("eval metrics", () => {
   });
 
   test("compareVariants delta is with − without", () => {
-    const withCards = aggregateVariant("with-cards", "/w", [
+    const withKnowcards = aggregateVariant("with-knowcards", "/w", [
       {
         agent_result: { cost_usd: 0.01 },
         verifier_result: { rewards: { reward: 1 } },
@@ -43,7 +43,7 @@ describe("eval metrics", () => {
         },
       },
     ]);
-    const withoutCards = aggregateVariant("without-cards", "/o", [
+    const withoutKnowcards = aggregateVariant("without-knowcards", "/o", [
       {
         agent_result: { cost_usd: 0.04 },
         verifier_result: { rewards: { reward: 1 } },
@@ -53,10 +53,10 @@ describe("eval metrics", () => {
         },
       },
     ]);
-    const report = compareVariants(withCards, withoutCards);
+    const report = compareVariants(withKnowcards, withoutKnowcards);
     expect(report.delta.meanCostUsd).toBeCloseTo(-0.03);
     expect(report.delta.meanDurationSec).toBeCloseTo(-90);
-    expect(formatCompareReport(report)).toContain("with-cards");
+    expect(formatCompareReport(report)).toContain("with-knowcards");
   });
 
   test("compareJobDirs reads sample Harbor fixtures", async () => {
@@ -64,8 +64,8 @@ describe("eval metrics", () => {
       "eval/fixtures/sample-results/with-cards",
       "eval/fixtures/sample-results/without-cards",
     );
-    expect(report.withCards.meanCostUsd).toBeCloseTo(0.012);
-    expect(report.withoutCards.meanCostUsd).toBeCloseTo(0.034);
+    expect(report.withKnowcards.meanCostUsd).toBeCloseTo(0.012);
+    expect(report.withoutKnowcards.meanCostUsd).toBeCloseTo(0.034);
     expect(report.delta.meanDurationSec).toBeCloseTo(-75);
   });
 });
@@ -87,37 +87,35 @@ describe("eval prepare", () => {
     expect(cards[0]!.useWhen).toContain("payments");
   });
 
-  test("prepareHarborDataset writes payments-cents with/without", async () => {
-    const { tasks } = await prepareHarborDataset(["payments-cents"]);
+  test("prepareHarborDataset writes one payments-cents task", async () => {
+    const { tasks } = await prepareHarborDataset(["payments-cents"], {
+      pack: false,
+    });
     expect(tasks).toHaveLength(1);
-    const { withCards, withoutCards } = tasks[0]!;
-    const withText = await Bun.file(join(withCards, "instruction.md")).text();
-    const withoutText = await Bun.file(
-      join(withoutCards, "instruction.md"),
-    ).text();
+    const { taskPath } = tasks[0]!;
+    const instruction = await Bun.file(join(taskPath, "instruction.md")).text();
 
-    expect(withText).toBe(withoutText);
-    expect(withText).toContain("apply_discount");
-    expect(withText).not.toContain("KNOWLEDGE CARDS (trusted memory)");
+    expect(instruction).toContain("apply_discount");
+    expect(instruction).not.toContain("KNOWLEDGE CARDS (trusted memory)");
     expect(
       await Bun.file(
-        join(
-          withCards,
-          "environment",
-          ".agents",
-          "knowledge_cards",
-          "default",
-          "integer-cents.md",
-        ),
+        join(taskPath, "seed_cards", "default", "integer-cents.md"),
       ).exists(),
     ).toBe(true);
     expect(
-      await Bun.file(join(withCards, "environment", "AGENTS.md")).text(),
-    ).toContain(".agents/knowledge_cards");
+      (
+        await Array.fromAsync(
+          new Bun.Glob("**/*.md").scan({
+            cwd: join(taskPath, "seed_cards"),
+            onlyFiles: true,
+          }),
+        )
+      ).length,
+    ).toBe(1);
     expect(
       await Bun.file(
         join(
-          withoutCards,
+          taskPath,
           "environment",
           ".agents",
           "knowledge_cards",
@@ -127,41 +125,48 @@ describe("eval prepare", () => {
       ).exists(),
     ).toBe(false);
     expect(
-      await Bun.file(join(withoutCards, "environment", "AGENTS.md")).exists(),
+      await Bun.file(join(taskPath, "environment", "AGENTS.md")).exists(),
     ).toBe(false);
-    expect(await Bun.file(join(withCards, "cards")).exists()).toBe(false);
+    expect(await Bun.file(join(taskPath, "cards")).exists()).toBe(false);
     expect(
-      await Bun.file(join(withCards, "environment", "payments.py")).exists(),
+      await Bun.file(join(taskPath, "environment", "payments.py")).exists(),
     ).toBe(true);
+    const toml = await Bun.file(join(taskPath, "task.toml")).text();
+    expect(toml).toContain('skills_dir = "/skills"');
+    expect(toml).toContain("payments-cents");
+    const dockerfile = await Bun.file(
+      join(taskPath, "environment", "Dockerfile"),
+    ).text();
+    expect(dockerfile).toContain("@earendil-works/pi-coding-agent@");
+    expect(dockerfile).toContain("PI_VERSION=0.84.2");
   });
 
-  test("prepareHarborDataset writes repo-map structure card", async () => {
-    const { tasks } = await prepareHarborDataset(["repo-map"]);
-    const { withCards, withoutCards } = tasks[0]!;
-    const withText = await Bun.file(join(withCards, "instruction.md")).text();
-    const withoutText = await Bun.file(
-      join(withoutCards, "instruction.md"),
-    ).text();
+  test("prepareHarborDataset writes one repo-map task", async () => {
+    const { tasks } = await prepareHarborDataset(["repo-map"], { pack: false });
+    const { taskPath } = tasks[0]!;
+    const instruction = await Bun.file(join(taskPath, "instruction.md")).text();
 
-    expect(withText).toBe(withoutText);
-    expect(withText).toContain("EU-WIDGET");
-    expect(withText).not.toContain("KNOWLEDGE CARDS (trusted memory)");
+    expect(instruction).toContain("EU-WIDGET");
+    expect(instruction).not.toContain("KNOWLEDGE CARDS (trusted memory)");
     expect(
       await Bun.file(
-        join(
-          withCards,
-          "environment",
-          ".agents",
-          "knowledge_cards",
-          "default",
-          "sku-normalization.md",
-        ),
+        join(taskPath, "seed_cards", "default", "sku-normalization.md"),
       ).exists(),
     ).toBe(true);
     expect(
+      (
+        await Array.fromAsync(
+          new Bun.Glob("**/*.md").scan({
+            cwd: join(taskPath, "seed_cards"),
+            onlyFiles: true,
+          }),
+        )
+      ).length,
+    ).toBe(1);
+    expect(
       await Bun.file(
         join(
-          withoutCards,
+          taskPath,
           "environment",
           ".agents",
           "knowledge_cards",
@@ -171,9 +176,12 @@ describe("eval prepare", () => {
       ).exists(),
     ).toBe(false);
     expect(
+      await Bun.file(join(taskPath, "environment", "AGENTS.md")).exists(),
+    ).toBe(false);
+    expect(
       await Bun.file(
         join(
-          withCards,
+          taskPath,
           "environment",
           "core",
           "pipeline",
@@ -184,8 +192,13 @@ describe("eval prepare", () => {
     ).toBe(true);
     expect(
       await Bun.file(
-        join(withCards, "environment", "decoys", "handlers", "update_sku.py"),
+        join(taskPath, "environment", "decoys", "handlers", "update_sku.py"),
       ).exists(),
     ).toBe(true);
+    const dockerfile = await Bun.file(
+      join(taskPath, "environment", "Dockerfile"),
+    ).text();
+    expect(dockerfile).toContain("@earendil-works/pi-coding-agent@");
+    expect(dockerfile).toContain("PI_VERSION=0.84.2");
   });
 });

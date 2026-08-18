@@ -1,28 +1,37 @@
-# Eval: with vs without knowledge cards
+# Eval: with vs without knowcards
 
 Harbor A/B comparing **reward**, **cost_usd**, and **agent duration**.
 
 Built on [Harbor](https://www.harborframework.com/).
 
-Default agent/model: `terminus-2` + `openai/gpt-5.6-luna`.
+Default agent/model: pinned `pi@0.84.2` + `openai/gpt-5.6-luna`.
 
-## Current vs target A/B
+## Eval kinds
 
-**Today (v0):** prepare forks each template into two Harbor task dirs (`…-with-cards` / `…-without-cards`). Same env/tests/solution and **same** `instruction.md`. The with-cards arm copies seed cards into `environment/.agents/knowledge_cards/` plus a short `AGENTS.md` so the agent must read them. The without-cards arm has neither. This exercises on-disk retrieval, not instruction pre-inject and not MCP.
+| Kind | Question | Status |
+|------|----------|--------|
+| **A/B** | Does knowcards (skill + CLI) change reward, cost, or duration on a **fixed** task? | Shipped (this README) |
+| **Sequential** | Does memory from earlier work on **one repo** help later tasks? (same env; 3–4 instructions in order; cards persist; TF-4) | Named only — no runner yet |
 
-**Target:** one Harbor task package per family (instruction and env unchanged). A/B by **agent config**:
+`repo-map` and `payments-cents` are A/B families (different repos). They are not a sequential suite.
+
+## A/B method
+
+One Harbor task package per family. Instruction, env, and tests are the same for both arms. Seed cards are prepared outside `environment/` and bind-mounted only on the with-arm. Arms differ in agent setup:
 
 | Arm | Agent |
 |-----|--------|
-| with | Required system/prompt for knowledge cards + MCP (`npx knowcards mcp`) + tools to query/propose |
-| without | Same base agent/model, no cards prompt, no MCP/tools |
+| without-knowcards | `harbor_pi:PiBare` at pinned version — no skills, no knowcards CLI, no seed cards in the image |
+| with-knowcards | `harbor_pi:PiWithKnowcards` + Harbor `--skill skills/knowcards` + packed `knowcards` CLI on PATH + seed cards mounted at `/app/.agents/knowledge_cards` |
 
-Cards stay on disk in the sandbox (or host-mounted library); the with-arm agent must retrieve/inject via tools. Target A/B is tracked under ROADMAP knobs `mcp` / `retrieve`. HTTP MCP sidecar + same-task agent kwargs are the remaining gap (knowcards MCP is stdio; Harbor MCP examples use streamable-http).
+Stock Harbor `pi` on 0.20.0 installs `@mariozechner/pi-coding-agent` (stops at 0.73.x). Our wrappers use `@earendil-works/pi-coding-agent@0.84.2` **baked into** each task `environment/Dockerfile` (Node 22 + Pi). `harbor_pi.py` only verifies `pi` and installs `knowcards.tgz` on the with-arm — no cold nvm install per trial. Keep Dockerfile `PI_VERSION` in sync with `DEFAULT_PI_VERSION` in `eval/run.ts`.
+
+No plugin. No MCP. No `AGENTS.md` hint. Prepare writes **exactly one** seed card per task to `seed_cards/` next to `environment/` (not inside the Docker build context). The with-arm mounts that dir; the without-arm cannot grep card files. Prepare also strips any `environment/.agents` or `AGENTS.md` and deletes stale `*-with-cards` / `*-without-cards` forks.
 
 ## Tasks
 
-| Task id | Goal of the card | Expected without-cards |
-|---------|------------------|------------------------|
+| Task id | Goal of the card | Expected without-knowcards |
+|---------|------------------|----------------------------|
 | `repo-map` (default) | Map live code path (`core/pipeline/steps/sku_normalize.py`); skip decoys | Still solvable, but more explore turns / tokens |
 | `payments-cents` | Correct money convention (integer cents) | Often fails if it trusts the misleading “dollars” README |
 
@@ -39,11 +48,11 @@ Fix `apply_discount` for integer cents. Environment README says dollars; the car
 ```bash
 uv tool install harbor   # https://www.harborframework.com/
 bun install
-bun run eval:prepare                 # all templates
+bun run eval:prepare                 # all templates + knowcards.tgz
 bun run eval:prepare -- repo-map     # one task
 ```
 
-Oracle (no LLM API) sanity-check:
+Oracle (no LLM API) sanity-check — **one** run, not A/B:
 
 ```bash
 bun run eval:run -- --task repo-map --agent oracle
@@ -77,8 +86,9 @@ harbor view eval/jobs
 
 ```
 eval/
-  templates/<task-id>/   # instruction, cards/<notebook>/*.md, env, tests, solution
-  prepare.ts             # writes harbor/<task>-{with,without}-cards
+  templates/<task-id>/   # instruction.base.md, cards/, env, tests, solution
+  prepare.ts             # writes harbor/<task-id> + knowcards.tgz
+  harbor_pi.py           # Pi + knowcards install (with-arm only)
   run.ts                 # prepare → harbor run ×2 → compare
   compare.ts / metrics.ts
   fixtures/              # sample-library + offline compare fixtures
@@ -86,10 +96,11 @@ eval/
   jobs/                  # local Harbor outputs (gitignored)
 ```
 
-Seed cards use the same layout as production:
+Seed cards use the same layout as production. Prepare copies them to `harbor/<task-id>/seed_cards/` (outside the Docker context); the with-arm mounts that path at `/app/.agents/knowledge_cards`.
 
 ```
 templates/<task-id>/cards/default/*.md
+→ harbor/<task-id>/seed_cards/default/*.md  (host only; with-arm mount)
 ```
 
 ## Offline check

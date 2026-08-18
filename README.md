@@ -2,6 +2,9 @@
 
 ### Local-first durable facts for coding agents, reinjected as trusted memory
 
+> "A computer program is said to learn from experience E with respect to some class of tasks T and performance measure P, if its performance at tasks in T, as measured by P, improves with experience E."
+> — Tom Mitchell
+
 > **Alpha** — this package is early. The API and host hook shapes may change.
 
 [![npm version](https://img.shields.io/npm/v/knowcards?style=flat-square)](https://www.npmjs.com/package/knowcards)
@@ -154,9 +157,9 @@ Only **L1** (knowledge cards) is in code today.
 
 On Continual Learning Bench, knowledge cards beat ICL, ACE, and Mem0 in early matched runs ([PR](https://github.com/pgasawa/continual-learning-bench/pull/11)).
 
-Harbor A/B on `repo-map` (n=3): both arms hit reward 1.0. With cards, cost and duration fell about 40%, input tokens about 55%:
+Harbor A/B on `repo-map` (n=3): both arms hit reward 1.0. With knowcards, cost and duration fell about 40%, input tokens about 55%:
 
-| Metric        | with-cards | without-cards | savings |
+| Metric        | with-knowcards | without-knowcards | savings |
 | ------------- | ---------- | ------------- | ------- |
 | Cost (USD)    | $0.001472  | $0.002448     | 39.9%   |
 | Duration (s)  | 8.773      | 14.632        | 40.0%   |
@@ -174,7 +177,7 @@ Harbor evals are the primary product judge for this slice (manual; not CI). See 
 | [`CONTRIBUTING.md`](CONTRIBUTING.md) | Setup, Harbor evals, how to contribute     |
 | [`ROADMAP.md`](ROADMAP.md)       | Testable knobs and A/B hypotheses             |
 | [`AGENTS.md`](AGENTS.md)         | Conventions for agents working in this repo   |
-| [`eval/README.md`](eval/README.md) | Harbor with/without cards A/B               |
+| [`eval/README.md`](eval/README.md) | Harbor A/B (bare Pi vs skill + CLI) |
 | [`skills/knowcards/SKILL.md`](skills/knowcards/SKILL.md) | Agent skill: when to query / propose |
 
 ## License

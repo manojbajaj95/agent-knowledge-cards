@@ -2,6 +2,8 @@
 
 Product shape: [README.md](README.md#product). Eval method: [eval/README.md](eval/README.md).
 
+Eval kinds: **A/B** (same fixed task; bare Pi vs Pi + knowcards skill + CLI — shipped) and **sequential** (same repo across 3–4 tasks; cards persist — named only). See [eval/README.md](eval/README.md).
+
 This file lists **testable knobs**. A hypothesis is a change you can A/B. Eval is the judge.
 
 **Focus:** L1 knowledge cards. Squeeze L1 before you build L2 or L3.
@@ -73,7 +75,7 @@ We do not store L0. Hosts already keep sessions. These entries wait until we nee
 
 ### L1 — Knowledge cards
 
-v0 is filesystem-first: markdown cards under `.agents/knowledge_cards`, ingest via `propose` (required title → slug), MiniSearch (BM25+) retrieve, title-first inject, Harbor with/without seeds, and **agent-follow-up reflect** via host Stop hooks (`knowcards install`). Separate-LLM notebook rebuild and dedupe/merge remain open.
+v0 is filesystem-first: markdown cards under `.agents/knowledge_cards`, ingest via `propose` (required title → slug), MiniSearch (BM25+) retrieve, title-first inject, Harbor A/B (same task; bare Pi vs Pi + skill + CLI), and **agent-follow-up reflect** via host Stop hooks (`knowcards install`). Separate-LLM notebook rebuild and dedupe/merge remain open.
 
 #### L1-H1 — Real LLM reflection
 
@@ -104,7 +106,7 @@ v0 is filesystem-first: markdown cards under `.agents/knowledge_cards`, ingest v
 - **Knob:** retrieve
 - **Why it can help:** An index is cheap. Full bodies are expensive. Fetch bodies only for selected ids.
 - **Status:** Inject default is **title-first** (slug, title, optional use-when). Full bodies stay on disk; the agent fetches them with `knowcards query` or MCP `query`.
-- **How to A/B:** same task family; arm A title-first inject (current `formatCardsForInject`); arm B full card bodies in the inject block. Harbor with-arm copies full card files to disk — that does not measure this knob. The arms must differ in inject wording (hooks or an equivalent prompt block), then compare reward, cost, and input tokens.
+- **How to A/B:** same task family; arm A title-first inject (current `formatCardsForInject`); arm B full card bodies in the inject block. Harbor A/B mounts seed cards for the with-arm CLI query only — that does not measure this knob. The arms must differ in inject wording (hooks or an equivalent prompt block), then compare reward, cost, and input tokens.
 - **Cite:** [claude-mem](https://github.com/thedotmack/claude-mem) 3-layer search; Tencent progressive disclosure.
 
 #### L1-H5 — Confirm and flag
@@ -309,7 +311,7 @@ Build task families as eval hypotheses. Implement by bandwidth. Details live in 
 | **TF-1** | `repo-map` | Does memory that maps the live code path cut explore cost without a reward drop? |
 | **TF-2** | `payments-cents` | Does a trusted card beat a wrong local README? |
 | **TF-3** | (none yet) | Does a short knowledge unit for an undocumented quirk prevent repeated failed attempts? |
-| **TF-4** | (none yet) | Does a fact learned in episode N improve episode N+1 on a related task? |
+| **TF-4** | (none yet) | Does a fact learned in episode N improve episode N+1 on a related task? (sequential eval kind — same repo, 3–4 tasks; not wired) |
 | **TF-5** | (none yet) | Does an L2 procedural skill beat rediscovery on a multi-step workflow? |
 
 Name these fields on every logged run: layer, knob, hypothesis id, Harbor version, model id, task family, arm, trial index, metrics (reward, cost, duration, input tokens, output tokens).
@@ -336,7 +338,7 @@ See also [CONTRIBUTING.md](CONTRIBUTING.md).
 | Core cards | Filesystem markdown under `.agents/knowledge_cards`; propose+title→slug; MiniSearch BM25+; agent-follow-up reflect (`REFLECT.md` override) | L1 hypotheses; L1-H9 DB swap; L1-H13 further retrieve; L1-H1 separate LLM; L1-H2 dedupe/rebuild |
 | Storage | `FsCardStorage` behind `CardStorage` | L1-H9 database |
 | Lifecycle | Title-first prompt inject (count/char caps, skip empty, slug dedupe); Stop reflect skips when transcript has no edits | L1-H4 full-body A/B; L1-H10…H12 polish; SessionStart re-prime; L1-H14 plugin |
-| Eval | Harbor with/without via on-disk cards in the with-arm env. **Primary gate for this slice**. | Agent A/B (same task; prompt+MCP) — see [eval/README.md](eval/README.md) |
+| Eval | Harbor A/B: one task per family; bare pinned Pi vs Pi + knowcards skill + CLI. Sequential same-repo 3–4 task runs named only (TF-4). **Primary gate for this slice**. | Sequential runner + shared fixture later — see [eval/README.md](eval/README.md) |
 | CL-bench | Design ancestor; not wired here | Manual runs in sibling repo |
 
 Keep the v0 path working when you pull a hypothesis forward.

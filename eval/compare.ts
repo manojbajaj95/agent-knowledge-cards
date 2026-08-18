@@ -1,5 +1,5 @@
 /**
- * Compare Harbor job dirs from with-cards vs without-cards arms.
+ * Compare Harbor job dirs from with-knowcards vs without-knowcards arms.
  *
  * Usage:
  *   bun run eval/compare.ts --with <jobDir> --without <jobDir> [--out report.json]
@@ -58,8 +58,8 @@ export async function compareJobDirs(
   const withTrials = await collectTrialResults(withJobDir);
   const withoutTrials = await collectTrialResults(withoutJobDir);
   return compareVariants(
-    aggregateVariant("with-cards", withJobDir, withTrials),
-    aggregateVariant("without-cards", withoutJobDir, withoutTrials),
+    aggregateVariant("with-knowcards", withJobDir, withTrials),
+    aggregateVariant("without-knowcards", withoutJobDir, withoutTrials),
   );
 }
 

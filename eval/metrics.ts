@@ -1,4 +1,4 @@
-/** Harbor trial/job metrics used by the with/without cards A/B compare. */
+/** Harbor trial/job metrics used by the with/without knowcards A/B compare. */
 
 export type TimingInfo = {
   started_at?: string | null;
@@ -53,8 +53,8 @@ export type VariantMetrics = {
 };
 
 export type CompareReport = {
-  withCards: VariantMetrics;
-  withoutCards: VariantMetrics;
+  withKnowcards: VariantMetrics;
+  withoutKnowcards: VariantMetrics;
   delta: {
     meanCostUsd: number | null;
     meanDurationSec: number | null;
@@ -142,28 +142,31 @@ export function aggregateVariant(
   };
 }
 
-/** Compare with-cards vs without-cards aggregates (delta = with − without). */
+/** Compare with-knowcards vs without-knowcards aggregates (delta = with − without). */
 export function compareVariants(
-  withCards: VariantMetrics,
-  withoutCards: VariantMetrics,
+  withKnowcards: VariantMetrics,
+  withoutKnowcards: VariantMetrics,
 ): CompareReport {
   return {
-    withCards,
-    withoutCards,
+    withKnowcards,
+    withoutKnowcards,
     delta: {
-      meanCostUsd: delta(withCards.meanCostUsd, withoutCards.meanCostUsd),
-      meanDurationSec: delta(
-        withCards.meanDurationSec,
-        withoutCards.meanDurationSec,
+      meanCostUsd: delta(
+        withKnowcards.meanCostUsd,
+        withoutKnowcards.meanCostUsd,
       ),
-      meanReward: delta(withCards.meanReward, withoutCards.meanReward),
+      meanDurationSec: delta(
+        withKnowcards.meanDurationSec,
+        withoutKnowcards.meanDurationSec,
+      ),
+      meanReward: delta(withKnowcards.meanReward, withoutKnowcards.meanReward),
       meanInputTokens: delta(
-        withCards.meanInputTokens,
-        withoutCards.meanInputTokens,
+        withKnowcards.meanInputTokens,
+        withoutKnowcards.meanInputTokens,
       ),
       meanOutputTokens: delta(
-        withCards.meanOutputTokens,
-        withoutCards.meanOutputTokens,
+        withKnowcards.meanOutputTokens,
+        withoutKnowcards.meanOutputTokens,
       ),
     },
   };
@@ -187,22 +190,22 @@ export function formatCompareReport(report: CompareReport): string {
       "errors",
     ],
     [
-      "with-cards",
-      fmt(report.withCards.meanReward, 3),
-      fmt(report.withCards.meanCostUsd),
-      fmt(report.withCards.meanDurationSec, 1),
-      fmt(report.withCards.meanInputTokens, 0),
-      fmt(report.withCards.meanOutputTokens, 0),
-      String(report.withCards.nErrors),
+      "with-knowcards",
+      fmt(report.withKnowcards.meanReward, 3),
+      fmt(report.withKnowcards.meanCostUsd),
+      fmt(report.withKnowcards.meanDurationSec, 1),
+      fmt(report.withKnowcards.meanInputTokens, 0),
+      fmt(report.withKnowcards.meanOutputTokens, 0),
+      String(report.withKnowcards.nErrors),
     ],
     [
-      "without-cards",
-      fmt(report.withoutCards.meanReward, 3),
-      fmt(report.withoutCards.meanCostUsd),
-      fmt(report.withoutCards.meanDurationSec, 1),
-      fmt(report.withoutCards.meanInputTokens, 0),
-      fmt(report.withoutCards.meanOutputTokens, 0),
-      String(report.withoutCards.nErrors),
+      "without-knowcards",
+      fmt(report.withoutKnowcards.meanReward, 3),
+      fmt(report.withoutKnowcards.meanCostUsd),
+      fmt(report.withoutKnowcards.meanDurationSec, 1),
+      fmt(report.withoutKnowcards.meanInputTokens, 0),
+      fmt(report.withoutKnowcards.meanOutputTokens, 0),
+      String(report.withoutKnowcards.nErrors),
     ],
     [
       "delta (with−without)",
@@ -222,14 +225,14 @@ export function formatCompareReport(report: CompareReport): string {
     r.map((cell, i) => cell.padEnd(widths[i]!)).join("  ");
 
   return [
-    "Knowledge cards A/B (Harbor)",
-    `with:    ${report.withCards.jobDir}  (n=${report.withCards.nTrials})`,
-    `without: ${report.withoutCards.jobDir}  (n=${report.withoutCards.nTrials})`,
+    "Knowcards A/B (Harbor)",
+    `with:    ${report.withKnowcards.jobDir}  (n=${report.withKnowcards.nTrials})`,
+    `without: ${report.withoutKnowcards.jobDir}  (n=${report.withoutKnowcards.nTrials})`,
     "",
     line(rows[0]!),
     line(rows[0]!.map((c) => "-".repeat(c.length))),
     ...rows.slice(1).map(line),
     "",
-    "Negative cost/duration delta means with-cards was cheaper/faster.",
+    "Negative cost/duration delta means with-knowcards was cheaper/faster.",
   ].join("\n");
 }
