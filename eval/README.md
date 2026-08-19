@@ -1,6 +1,6 @@
 # Eval: with vs without knowcards
 
-Harbor A/B comparing **reward**, **cost_usd**, and **agent duration**.
+Harbor A/B comparing **reward**, **cost_usd** (uncached input + cache), and **agent_execution** duration (not env/setup/verifier).
 
 Built on [Harbor](https://www.harborframework.com/).
 
@@ -67,7 +67,9 @@ bun run eval:run -- --task payments-cents
 bun run eval:run -- --task repo-map --task payments-cents
 ```
 
-Jobs land in `eval/jobs/`. Compare two existing job dirs:
+Jobs land in `eval/jobs/`. Compare two existing job dirs.
+
+`cost_usd` comes from Pi (uncached input + cache read/write + output). The table splits Harbor’s lumped `n_input_tokens` into uncached `input_tok` and `cache_tok`. `duration_s` is `agent_execution` only — not image build, `agent_setup` (knowcards install), or the verifier.
 
 ```bash
 bun run eval:compare -- \

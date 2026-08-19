@@ -32,6 +32,46 @@ describe("eval metrics", () => {
     expect(row.reward).toBe(1);
   });
 
+  test("duration is agent_execution only", () => {
+    const row = metricsFromTrial({
+      agent_result: { cost_usd: 0.02 },
+      agent_execution: {
+        started_at: "2026-08-07T10:00:00.000Z",
+        finished_at: "2026-08-07T10:00:30.000Z",
+      },
+      started_at: "2026-08-07T09:59:00.000Z",
+      finished_at: "2026-08-07T10:02:00.000Z",
+    });
+    expect(row.durationSec).toBe(30);
+  });
+
+  test("duration is null without agent_execution", () => {
+    const row = metricsFromTrial({
+      agent_result: { cost_usd: 0.02 },
+      started_at: "2026-08-07T09:59:00.000Z",
+      finished_at: "2026-08-07T10:02:00.000Z",
+    });
+    expect(row.durationSec).toBeNull();
+  });
+
+  test("prompt tokens split Harbor input that includes cache", () => {
+    const row = metricsFromTrial({
+      agent_result: {
+        cost_usd: 0.0028,
+        n_input_tokens: 20698,
+        n_cache_tokens: 20674,
+        n_output_tokens: 1131,
+      },
+      agent_execution: {
+        started_at: "2026-08-07T10:00:00.000Z",
+        finished_at: "2026-08-07T10:00:27.000Z",
+      },
+    });
+    expect(row.inputTokens).toBe(24);
+    expect(row.cacheTokens).toBe(20674);
+    expect(row.costUsd).toBe(0.0028);
+  });
+
   test("compareVariants delta is with − without", () => {
     const withKnowcards = aggregateVariant("with-knowcards", "/w", [
       {
@@ -57,6 +97,7 @@ describe("eval metrics", () => {
     expect(report.delta.meanCostUsd).toBeCloseTo(-0.03);
     expect(report.delta.meanDurationSec).toBeCloseTo(-90);
     expect(formatCompareReport(report)).toContain("with-knowcards");
+    expect(formatCompareReport(report)).toContain("cache_tok");
   });
 
   test("compareJobDirs reads sample Harbor fixtures", async () => {

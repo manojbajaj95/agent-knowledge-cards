@@ -39,6 +39,7 @@ export type VariantMetrics = {
   meanCostUsd: number | null;
   meanDurationSec: number | null;
   meanInputTokens: number | null;
+  meanCacheTokens: number | null;
   meanOutputTokens: number | null;
   trials: Array<{
     trialName: string;
@@ -47,6 +48,7 @@ export type VariantMetrics = {
     costUsd: number | null;
     durationSec: number | null;
     inputTokens: number | null;
+    cacheTokens: number | null;
     outputTokens: number | null;
     error: string | null;
   }>;
@@ -60,20 +62,38 @@ export type CompareReport = {
     meanDurationSec: number | null;
     meanReward: number | null;
     meanInputTokens: number | null;
+    meanCacheTokens: number | null;
     meanOutputTokens: number | null;
   };
 };
 
-function durationSec(
-  timing?: TimingInfo | null,
-  fallback?: TimingInfo | null,
-): number | null {
-  const start = timing?.started_at ?? fallback?.started_at;
-  const end = timing?.finished_at ?? fallback?.finished_at;
+/** Agent run only. Do not use trial wall clock (env / agent_setup / verifier). */
+function durationSec(timing?: TimingInfo | null): number | null {
+  const start = timing?.started_at;
+  const end = timing?.finished_at;
   if (!start || !end) return null;
   const ms = Date.parse(end) - Date.parse(start);
   if (!Number.isFinite(ms)) return null;
   return ms / 1000;
+}
+
+/**
+ * Harbor/Pi `n_input_tokens` includes cache reads. Split so cost tracking
+ * can use uncached input + cache instead of the lumped total.
+ */
+export function promptTokens(agent?: AgentResult | null): {
+  inputTokens: number | null;
+  cacheTokens: number | null;
+} {
+  const total = agent?.n_input_tokens;
+  const cache = agent?.n_cache_tokens;
+  if (typeof total === "number" && typeof cache === "number") {
+    return { inputTokens: Math.max(0, total - cache), cacheTokens: cache };
+  }
+  return {
+    inputTokens: typeof total === "number" ? total : null,
+    cacheTokens: typeof cache === "number" ? cache : null,
+  };
 }
 
 function primaryReward(verifier?: VerifierResult | null): number | null {
@@ -104,16 +124,15 @@ function delta(a: number | null, b: number | null): number | null {
 export function metricsFromTrial(
   trial: TrialResult,
 ): VariantMetrics["trials"][number] {
+  const tokens = promptTokens(trial.agent_result);
   return {
     trialName: trial.trial_name ?? "unknown",
     taskName: trial.task_name ?? "unknown",
     reward: primaryReward(trial.verifier_result),
     costUsd: trial.agent_result?.cost_usd ?? null,
-    durationSec: durationSec(trial.agent_execution, {
-      started_at: trial.started_at,
-      finished_at: trial.finished_at,
-    }),
-    inputTokens: trial.agent_result?.n_input_tokens ?? null,
+    durationSec: durationSec(trial.agent_execution),
+    inputTokens: tokens.inputTokens,
+    cacheTokens: tokens.cacheTokens,
     outputTokens: trial.agent_result?.n_output_tokens ?? null,
     error: trial.exception_info?.exception_type
       ? `${trial.exception_info.exception_type}: ${trial.exception_info.exception_message ?? ""}`
@@ -137,6 +156,7 @@ export function aggregateVariant(
     meanCostUsd: mean(rows.map((r) => r.costUsd)),
     meanDurationSec: mean(rows.map((r) => r.durationSec)),
     meanInputTokens: mean(rows.map((r) => r.inputTokens)),
+    meanCacheTokens: mean(rows.map((r) => r.cacheTokens)),
     meanOutputTokens: mean(rows.map((r) => r.outputTokens)),
     trials: rows,
   };
@@ -164,6 +184,10 @@ export function compareVariants(
         withKnowcards.meanInputTokens,
         withoutKnowcards.meanInputTokens,
       ),
+      meanCacheTokens: delta(
+        withKnowcards.meanCacheTokens,
+        withoutKnowcards.meanCacheTokens,
+      ),
       meanOutputTokens: delta(
         withKnowcards.meanOutputTokens,
         withoutKnowcards.meanOutputTokens,
@@ -186,6 +210,7 @@ export function formatCompareReport(report: CompareReport): string {
       "cost_usd",
       "duration_s",
       "input_tok",
+      "cache_tok",
       "output_tok",
       "errors",
     ],
@@ -195,6 +220,7 @@ export function formatCompareReport(report: CompareReport): string {
       fmt(report.withKnowcards.meanCostUsd),
       fmt(report.withKnowcards.meanDurationSec, 1),
       fmt(report.withKnowcards.meanInputTokens, 0),
+      fmt(report.withKnowcards.meanCacheTokens, 0),
       fmt(report.withKnowcards.meanOutputTokens, 0),
       String(report.withKnowcards.nErrors),
     ],
@@ -204,6 +230,7 @@ export function formatCompareReport(report: CompareReport): string {
       fmt(report.withoutKnowcards.meanCostUsd),
       fmt(report.withoutKnowcards.meanDurationSec, 1),
       fmt(report.withoutKnowcards.meanInputTokens, 0),
+      fmt(report.withoutKnowcards.meanCacheTokens, 0),
       fmt(report.withoutKnowcards.meanOutputTokens, 0),
       String(report.withoutKnowcards.nErrors),
     ],
@@ -213,6 +240,7 @@ export function formatCompareReport(report: CompareReport): string {
       fmt(report.delta.meanCostUsd),
       fmt(report.delta.meanDurationSec, 1),
       fmt(report.delta.meanInputTokens, 0),
+      fmt(report.delta.meanCacheTokens, 0),
       fmt(report.delta.meanOutputTokens, 0),
       "—",
     ],
@@ -234,5 +262,6 @@ export function formatCompareReport(report: CompareReport): string {
     ...rows.slice(1).map(line),
     "",
     "Negative cost/duration delta means with-knowcards was cheaper/faster.",
+    "cost_usd is billed from uncached input + cache. duration_s is agent_execution only.",
   ].join("\n");
 }
