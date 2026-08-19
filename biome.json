@@ -6,7 +6,13 @@
     "useIgnoreFile": true
   },
   "files": {
-    "includes": ["**", "!!**/dist", "!!**/eval/jobs", "!!**/node_modules"]
+    "includes": [
+      "**",
+      "!!**/dist",
+      "!!**/eval/jobs",
+      "!!**/eval/templates",
+      "!!**/node_modules"
+    ]
   },
   "formatter": {
     "enabled": true,

@@ -308,8 +308,8 @@ Build task families as eval hypotheses. Implement by bandwidth. Details live in 
 
 | Id | Seed | Question |
 | -- | ---- | -------- |
-| **TF-1** | `repo-map` | Does memory that maps the live code path cut explore cost without a reward drop? |
-| **TF-2** | `payments-cents` | Does a trusted card beat a wrong local README? |
+| **TF-1** | SWE-bench Verified ×4 (`pytest-dev__pytest-10051`, `psf__requests-2931`, `pylint-dev__pylint-4604`, `sphinx-doc__sphinx-10466`) | Does a file-map card cut explore cost on a real issue without a reward drop? |
+| **TF-2** | (none yet) | Does a trusted card beat a wrong local README? |
 | **TF-3** | (none yet) | Does a short knowledge unit for an undocumented quirk prevent repeated failed attempts? |
 | **TF-4** | (none yet) | Does a fact learned in episode N improve episode N+1 on a related task? (sequential eval kind — same repo, 3–4 tasks; not wired) |
 | **TF-5** | (none yet) | Does an L2 procedural skill beat rediscovery on a multi-step workflow? |
@@ -338,7 +338,7 @@ See also [CONTRIBUTING.md](CONTRIBUTING.md).
 | Core cards | Filesystem markdown under `.agents/knowledge_cards`; propose+title→slug; MiniSearch BM25+; agent-follow-up reflect (`REFLECT.md` override) | L1 hypotheses; L1-H9 DB swap; L1-H13 further retrieve; L1-H1 separate LLM; L1-H2 dedupe/rebuild |
 | Storage | `FsCardStorage` behind `CardStorage` | L1-H9 database |
 | Lifecycle | Title-first prompt inject (count/char caps, skip empty, slug dedupe); Stop reflect skips when transcript has no edits | L1-H4 full-body A/B; L1-H10…H12 polish; SessionStart re-prime; L1-H14 plugin |
-| Eval | Harbor A/B: one task per family; bare pinned Pi vs Pi + knowcards skill + CLI. Sequential same-repo 3–4 task runs named only (TF-4). **Primary gate for this slice**. | Sequential runner + shared fixture later — see [eval/README.md](eval/README.md) |
+| Eval | Harbor A/B on four SWE-bench Verified tasks; official instruction/tests/oracle; bare pinned Pi vs Pi + knowcards skill + CLI. Sequential same-repo 3–4 task runs named only (TF-4). **Primary gate for this slice**. | Sequential runner + shared fixture later — see [eval/README.md](eval/README.md) |
 | CL-bench | Design ancestor; not wired here | Manual runs in sibling repo |
 
 Keep the v0 path working when you pull a hypothesis forward.

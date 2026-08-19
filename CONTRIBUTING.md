@@ -23,12 +23,12 @@ Harbor A/B evals are the primary validation for this slice. They are **manual on
 
 ```bash
 bun run eval:prepare
-bun run eval:run -- --task repo-map --agent oracle   # sanity, no LLM
-bun run eval:run -- --task repo-map                  # pi@0.84.2 + openai/gpt-5.6-luna
-bun run eval:run -- --task payments-cents            # correctness under misleading README
+bun run eval:run -- --task pytest-dev__pytest-10051 --agent oracle   # sanity, no LLM
+bun run eval:run -- --task pytest-dev__pytest-10051                  # pi@0.84.2 + openai/gpt-5.6-luna
+bun run eval:run                                                     # all four SWE-bench Verified tasks
 ```
 
-Same coding task, with vs without knowcards (skill + CLI on pinned Pi). `repo-map` measures cost/time/token savings when both arms solve it. `payments-cents` measures correctness when the README is wrong.
+Same SWE-bench Verified issue, with vs without knowcards (skill + CLI on pinned Pi). Instruction, tests, and gold oracle come from Harbor `swe-bench/swe-bench-verified`. The seed card names the live file.
 
 A second eval kind (**sequential**: same repo, 3–4 tasks, cards persist) is named in [`eval/README.md`](eval/README.md) but not wired yet.
 

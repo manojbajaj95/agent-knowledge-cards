@@ -120,27 +120,34 @@ describe("eval prepare", () => {
     expect(cards.some((c) => c.slug === "integer-cents")).toBe(true);
   });
 
-  test("loadTemplateCards reads payments-cents seed notebook", async () => {
-    const cards = await loadTemplateCards("eval/templates/payments-cents");
-    expect(cards).toHaveLength(1);
-    expect(cards[0]!.title).toContain("integer cents");
-    expect(cards[0]!.slug).toBe("integer-cents");
-    expect(cards[0]!.useWhen).toContain("payments");
+  test("SWE-bench templates each have one seed card", async () => {
+    const ids = [
+      "pytest-dev__pytest-10051",
+      "psf__requests-2931",
+      "pylint-dev__pylint-4604",
+      "sphinx-doc__sphinx-10466",
+    ];
+    for (const id of ids) {
+      const cards = await loadTemplateCards(`eval/templates/${id}`);
+      expect(cards).toHaveLength(1);
+    }
   });
 
-  test("prepareHarborDataset writes one payments-cents task", async () => {
-    const { tasks } = await prepareHarborDataset(["payments-cents"], {
+  test("prepareHarborDataset writes official SWE-bench pytest task", async () => {
+    const { tasks } = await prepareHarborDataset(["pytest-dev__pytest-10051"], {
       pack: false,
     });
     expect(tasks).toHaveLength(1);
-    const { taskPath } = tasks[0]!;
+    const task = tasks[0];
+    if (!task) throw new Error("expected one prepared task");
+    const { taskPath } = task;
     const instruction = await Bun.file(join(taskPath, "instruction.md")).text();
 
-    expect(instruction).toContain("apply_discount");
+    expect(instruction).toContain("caplog.get_records");
     expect(instruction).not.toContain("KNOWLEDGE CARDS (trusted memory)");
     expect(
       await Bun.file(
-        join(taskPath, "seed_cards", "default", "integer-cents.md"),
+        join(taskPath, "seed_cards", "default", "caplog-clear.md"),
       ).exists(),
     ).toBe(true);
     expect(
@@ -161,7 +168,7 @@ describe("eval prepare", () => {
           ".agents",
           "knowledge_cards",
           "default",
-          "integer-cents.md",
+          "caplog-clear.md",
         ),
       ).exists(),
     ).toBe(false);
@@ -169,76 +176,20 @@ describe("eval prepare", () => {
       await Bun.file(join(taskPath, "environment", "AGENTS.md")).exists(),
     ).toBe(false);
     expect(await Bun.file(join(taskPath, "cards")).exists()).toBe(false);
+    expect(await Bun.file(join(taskPath, "tests", "test.sh")).exists()).toBe(
+      true,
+    );
     expect(
-      await Bun.file(join(taskPath, "environment", "payments.py")).exists(),
+      await Bun.file(join(taskPath, "solution", "solve.sh")).exists(),
     ).toBe(true);
     const toml = await Bun.file(join(taskPath, "task.toml")).text();
     expect(toml).toContain('skills_dir = "/skills"');
-    expect(toml).toContain("payments-cents");
+    expect(toml).toContain("pytest-dev__pytest-10051");
     const dockerfile = await Bun.file(
       join(taskPath, "environment", "Dockerfile"),
     ).text();
-    expect(dockerfile).toContain("@earendil-works/pi-coding-agent@");
-    expect(dockerfile).toContain("PI_VERSION=0.84.2");
-  });
-
-  test("prepareHarborDataset writes one repo-map task", async () => {
-    const { tasks } = await prepareHarborDataset(["repo-map"], { pack: false });
-    const { taskPath } = tasks[0]!;
-    const instruction = await Bun.file(join(taskPath, "instruction.md")).text();
-
-    expect(instruction).toContain("EU-WIDGET");
-    expect(instruction).not.toContain("KNOWLEDGE CARDS (trusted memory)");
-    expect(
-      await Bun.file(
-        join(taskPath, "seed_cards", "default", "sku-normalization.md"),
-      ).exists(),
-    ).toBe(true);
-    expect(
-      (
-        await Array.fromAsync(
-          new Bun.Glob("**/*.md").scan({
-            cwd: join(taskPath, "seed_cards"),
-            onlyFiles: true,
-          }),
-        )
-      ).length,
-    ).toBe(1);
-    expect(
-      await Bun.file(
-        join(
-          taskPath,
-          "environment",
-          ".agents",
-          "knowledge_cards",
-          "default",
-          "sku-normalization.md",
-        ),
-      ).exists(),
-    ).toBe(false);
-    expect(
-      await Bun.file(join(taskPath, "environment", "AGENTS.md")).exists(),
-    ).toBe(false);
-    expect(
-      await Bun.file(
-        join(
-          taskPath,
-          "environment",
-          "core",
-          "pipeline",
-          "steps",
-          "sku_normalize.py",
-        ),
-      ).exists(),
-    ).toBe(true);
-    expect(
-      await Bun.file(
-        join(taskPath, "environment", "decoys", "handlers", "update_sku.py"),
-      ).exists(),
-    ).toBe(true);
-    const dockerfile = await Bun.file(
-      join(taskPath, "environment", "Dockerfile"),
-    ).text();
+    expect(dockerfile).toContain("swebench/sweb.eval.x86_64");
+    expect(dockerfile).toContain("WORKDIR /testbed");
     expect(dockerfile).toContain("@earendil-works/pi-coding-agent@");
     expect(dockerfile).toContain("PI_VERSION=0.84.2");
   });

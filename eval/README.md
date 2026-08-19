@@ -2,7 +2,7 @@
 
 Harbor A/B comparing **reward**, **cost_usd** (uncached input + cache), and **agent_execution** duration (not env/setup/verifier).
 
-Built on [Harbor](https://www.harborframework.com/).
+Built on [Harbor](https://www.harborframework.com/). Tasks are official [SWE-bench Verified](https://www.swebench.com/) packages (`swe-bench/swe-bench-verified`) with the standard instruction, Docker image, gold `solution/solve.sh`, and verifier. We add one seed card per task and bake Node + Pi into the image.
 
 Default agent/model: pinned `pi@0.84.2` + `openai/gpt-5.6-luna`.
 
@@ -13,58 +13,57 @@ Default agent/model: pinned `pi@0.84.2` + `openai/gpt-5.6-luna`.
 | **A/B** | Does knowcards (skill + CLI) change reward, cost, or duration on a **fixed** task? | Shipped (this README) |
 | **Sequential** | Does memory from earlier work on **one repo** help later tasks? (same env; 3–4 instructions in order; cards persist; TF-4) | Named only — no runner yet |
 
-`repo-map` and `payments-cents` are A/B families (different repos). They are not a sequential suite.
+These four instances are independent A/B families. They are not a sequential suite.
 
 ## A/B method
 
-One Harbor task package per family. Instruction, env, and tests are the same for both arms. Seed cards are prepared outside `environment/` and bind-mounted only on the with-arm. Arms differ in agent setup:
+One Harbor task package per instance. Instruction, env, and tests are the official SWE-bench ones for both arms. Seed cards are prepared outside `environment/` and bind-mounted only on the with-arm at `/testbed/.agents/knowledge_cards`. Arms differ in agent setup:
 
 | Arm | Agent |
 |-----|--------|
 | without-knowcards | `harbor_pi:PiBare` at pinned version — no skills, no knowcards CLI, no seed cards in the image |
-| with-knowcards | `harbor_pi:PiWithKnowcards` + Harbor `--skill skills/knowcards` + packed `knowcards` CLI on PATH + seed cards mounted at `/app/.agents/knowledge_cards` |
+| with-knowcards | `harbor_pi:PiWithKnowcards` + Harbor `--skill skills/knowcards` + packed `knowcards` CLI on PATH + seed cards mounted at `/testbed/.agents/knowledge_cards` |
 
-Stock Harbor `pi` on 0.20.0 installs `@mariozechner/pi-coding-agent` (stops at 0.73.x). Our wrappers use `@earendil-works/pi-coding-agent@0.84.2` **baked into** each task `environment/Dockerfile` (Node 22 + Pi). `harbor_pi.py` only verifies `pi` and installs `knowcards.tgz` on the with-arm — no cold nvm install per trial. Keep Dockerfile `PI_VERSION` in sync with `DEFAULT_PI_VERSION` in `eval/run.ts`.
+Stock Harbor `pi` on 0.20.0 installs `@mariozechner/pi-coding-agent` (stops at 0.73.x). Our wrappers use `@earendil-works/pi-coding-agent@0.84.2` **baked into** each task Dockerfile on top of the SWE-bench base image. `harbor_pi.py` only verifies `pi` and installs `knowcards.tgz` on the with-arm. Keep Dockerfile `PI_VERSION` in sync with `EVAL_PI_VERSION` in `eval/prepare.ts`.
 
 No plugin. No MCP. No `AGENTS.md` hint. Prepare writes **exactly one** seed card per task to `seed_cards/` next to `environment/` (not inside the Docker build context). The with-arm mounts that dir; the without-arm cannot grep card files. Prepare also strips any `environment/.agents` or `AGENTS.md` and deletes stale `*-with-cards` / `*-without-cards` forks.
 
+SWE-bench images are `linux/amd64`. Docker on Apple Silicon runs them with emulation.
+
 ## Tasks
 
-| Task id | Goal of the card | Expected without-knowcards |
-|---------|------------------|----------------------------|
-| `repo-map` (default) | Map live code path (`core/pipeline/steps/sku_normalize.py`); skip decoys | Still solvable, but more explore turns / tokens |
-| `payments-cents` | Correct money convention (integer cents) | Often fails if it trusts the misleading “dollars” README |
+Four SWE-bench Verified instances (human time 15 min–1 hour). The card names the live file(s). The verifier is the official SWE-bench test script (hidden FAIL_TO_PASS / PASS_TO_PASS). Oracle applies the gold patch.
 
-### `repo-map`
+| Task id | Repo | Goal of the card |
+|---------|------|------------------|
+| `pytest-dev__pytest-10051` | pytest | `caplog.clear` must keep `get_records` on the same list (`src/_pytest/logging.py`) |
+| `psf__requests-2931` | requests | Binary PUT bodies must not go through `to_native_string` (`requests/models.py`) |
+| `pylint-dev__pylint-4604` | pylint | Type comments count as uses for `unused-import` (`pylint/checkers/variables.py`) |
+| `sphinx-doc__sphinx-10466` | sphinx | gettext `Message.locations` must not duplicate (`sphinx/builders/gettext.py`) |
 
-Fix EU SKU prefix (`WIDGET` → `EU-WIDGET`). The bug is findable without the card, but the card names the live file and warns that `legacy/` + `decoys/` are dead ends — so the win is **fewer tokens / turns / time**, not pass/fail.
-
-### `payments-cents`
-
-Fix `apply_discount` for integer cents. Environment README says dollars; the card says cents. Measures **correctness** under a misleading local doc.
+Omit `--task` to run all four. Pass `--task <id>` for one.
 
 ## Setup
 
 ```bash
 uv tool install harbor   # https://www.harborframework.com/
 bun install
-bun run eval:prepare                 # all templates + knowcards.tgz
-bun run eval:prepare -- repo-map     # one task
+bun run eval:prepare                              # all templates + knowcards.tgz
+bun run eval:prepare -- pytest-dev__pytest-10051  # one task
 ```
 
 Oracle (no LLM API) sanity-check — **one** run, not A/B:
 
 ```bash
-bun run eval:run -- --task repo-map --agent oracle
+bun run eval:run -- --task pytest-dev__pytest-10051 --agent oracle
 ```
 
 Real agent A/B (needs `OPENAI_API_KEY`):
 
 ```bash
-bun run eval:run -- --task repo-map
-bun run eval:run -- --task payments-cents
-# both:
-bun run eval:run -- --task repo-map --task payments-cents
+bun run eval:run -- --task pytest-dev__pytest-10051
+# all four:
+bun run eval:run
 ```
 
 Jobs land in `eval/jobs/`. Compare two existing job dirs.
@@ -88,8 +87,8 @@ harbor view eval/jobs
 
 ```
 eval/
-  templates/<task-id>/   # instruction.base.md, cards/, env, tests, solution
-  prepare.ts             # writes harbor/<task-id> + knowcards.tgz
+  templates/<task-id>/   # official SWE-bench task + cards/ + instruction.base.md
+  prepare.ts             # writes harbor/<task-id> + Pi bake + knowcards.tgz
   harbor_pi.py           # Pi + knowcards install (with-arm only)
   run.ts                 # prepare → harbor run ×2 → compare
   compare.ts / metrics.ts
@@ -98,7 +97,7 @@ eval/
   jobs/                  # local Harbor outputs (gitignored)
 ```
 
-Seed cards use the same layout as production. Prepare copies them to `harbor/<task-id>/seed_cards/` (outside the Docker context); the with-arm mounts that path at `/app/.agents/knowledge_cards`.
+Seed cards use the same layout as production. Prepare copies them to `harbor/<task-id>/seed_cards/` (outside the Docker context); the with-arm mounts that path at `/testbed/.agents/knowledge_cards`.
 
 ```
 templates/<task-id>/cards/default/*.md

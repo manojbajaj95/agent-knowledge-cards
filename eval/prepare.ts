@@ -1,15 +1,18 @@
 /**
  * Materialize Harbor tasks for knowcards A/B evals.
  *
- * Templates live in eval/templates/<task-id>/. Seed cards use the same
- * filesystem layout as production: cards/<notebook-id>/*.md
+ * Templates live in eval/templates/<task-id>/. Instruction, tests, solution,
+ * and the SWE-bench Dockerfile come from Harbor's official
+ * swe-bench/swe-bench-verified tasks. Seed cards use production layout:
+ * cards/<notebook-id>/*.md
  *
  * Each template becomes one Harbor task (same instruction/env/tests for both
  * arms). Arms differ only at harbor-run time (bare Pi vs Pi + skill + CLI).
- * Seed cards land in seed_cards/ (outside environment/) so they are not in the
- * Docker image. Each task keeps exactly one seed card. The with-arm bind-mounts
- * seed_cards/ at run time; without has none. environment/ never gets .agents or
- * AGENTS.md.
+ * Prepare appends a Node+Pi bake to the official Dockerfile and sets
+ * skills_dir. Seed cards land in seed_cards/ (outside environment/) so they
+ * are not in the Docker image. Each task keeps exactly one seed card. The
+ * with-arm bind-mounts seed_cards/ at /testbed/.agents/knowledge_cards;
+ * without has none. environment/ never gets .agents or AGENTS.md.
  *   eval/harbor/<task-id>/
  *   eval/harbor/knowcards.tgz  (npm pack of this repo after build)
  */
@@ -36,7 +39,41 @@ const HARBOR_DIR = join(EVAL_DIR, "harbor");
 export const SEED_CARDS_REL = "seed_cards";
 export const KNOWCARDS_TGZ = join(HARBOR_DIR, "knowcards.tgz");
 /** In-container path where the with-arm mounts SEED_CARDS_REL. */
-export const CONTAINER_CARDS_ROOT = "/app/.agents/knowledge_cards";
+export const CONTAINER_CARDS_ROOT = "/testbed/.agents/knowledge_cards";
+/** Baked into each task image. Keep in sync with eval/run.ts. */
+export const EVAL_PI_VERSION = "0.84.2";
+const EVAL_NODE_VERSION = "22.19.0";
+
+const PI_BAKE = `
+# Knowcards eval: bake Node + Pi. Keep PI_VERSION in sync with eval/run.ts.
+ARG PI_VERSION=${EVAL_PI_VERSION}
+ARG NODE_VERSION=${EVAL_NODE_VERSION}
+ARG TARGETARCH
+RUN apt-get update \\
+  && apt-get install -y --no-install-recommends ca-certificates curl xz-utils \\
+  && ARCH="$(case "\${TARGETARCH}" in amd64) echo x64 ;; arm64) echo arm64 ;; *) echo x64 ;; esac)" \\
+  && curl -fsSL "https://nodejs.org/dist/v\${NODE_VERSION}/node-v\${NODE_VERSION}-linux-\${ARCH}.tar.xz" \\
+    | tar -xJ -C /usr/local --strip-components=1 \\
+  && npm install -g --ignore-scripts "@earendil-works/pi-coding-agent@\${PI_VERSION}" \\
+  && pi --version \\
+  && rm -rf /var/lib/apt/lists/*
+`;
+
+function bakePiIntoDockerfile(text: string): string {
+  if (text.includes("@earendil-works/pi-coding-agent@")) return text;
+  return `${text.trimEnd()}\n${PI_BAKE}`;
+}
+
+function ensureSkillsDir(toml: string): string {
+  if (/skills_dir\s*=/.test(toml)) return toml;
+  const marker = "\n[environment]\n";
+  const idx = toml.indexOf(marker);
+  if (idx === -1) {
+    return `${toml.trimEnd()}\n[environment]\nskills_dir = "/skills"\n`;
+  }
+  const insertAt = idx + marker.length;
+  return `${toml.slice(0, insertAt)}skills_dir = "/skills"\n${toml.slice(insertAt)}`;
+}
 
 export type PreparedTask = {
   taskId: string;
@@ -76,7 +113,7 @@ async function copyTree(src: string, dest: string): Promise<void> {
 
 /** Drop old with/without-cards forks left from earlier prepare layouts. */
 async function removeStaleHarborForks(): Promise<void> {
-  let entries: Awaited<ReturnType<typeof readdir>>;
+  let entries: Array<{ isDirectory(): boolean; name: string }>;
   try {
     entries = await readdir(HARBOR_DIR, { withFileTypes: true });
   } catch {
@@ -117,10 +154,19 @@ async function writeTask(opts: {
   await rm(cardsDest, { recursive: true, force: true });
   await cp(cardsSrc, cardsDest, { recursive: true });
 
-  const toml = (await readFile(join(opts.templateDir, "task.toml"), "utf8"))
-    .replaceAll("{{TASK_NAME}}", opts.taskId)
-    .replaceAll("{{VARIANT}}", "ab");
+  const toml = ensureSkillsDir(
+    (await readFile(join(opts.templateDir, "task.toml"), "utf8"))
+      .replaceAll("{{TASK_NAME}}", opts.taskId)
+      .replaceAll("{{VARIANT}}", "ab"),
+  );
   await writeFile(join(dest, "task.toml"), toml, "utf8");
+
+  const dockerfilePath = join(dest, "environment", "Dockerfile");
+  await writeFile(
+    dockerfilePath,
+    bakePiIntoDockerfile(await readFile(dockerfilePath, "utf8")),
+    "utf8",
+  );
 
   await chmod(join(dest, "solution", "solve.sh"), 0o755);
   await chmod(join(dest, "tests", "test.sh"), 0o755);
