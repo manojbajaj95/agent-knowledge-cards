@@ -157,16 +157,9 @@ Only **L1** (knowledge cards) is in code today.
 
 On Continual Learning Bench, knowledge cards beat ICL, ACE, and Mem0 in early matched runs ([PR](https://github.com/pgasawa/continual-learning-bench/pull/11)).
 
-Harbor A/B on `repo-map` (n=3): both arms hit reward 1.0. With knowcards, cost and duration fell about 40%, input tokens about 55%:
+Harbor A/B uses four [SWE-bench Verified](https://www.swebench.com/) instances (pytest, requests, pylint, sphinx) with the official Harbor tests and oracle. See [`eval/README.md`](eval/README.md).
 
-| Metric        | with-knowcards | without-knowcards | savings |
-| ------------- | ---------- | ------------- | ------- |
-| Cost (USD)    | $0.001472  | $0.002448     | 39.9%   |
-| Duration (s)  | 8.773      | 14.632        | 40.0%   |
-| Input tokens  | 2848       | 6395          | 55.5%   |
-| Output tokens | 674        | 1242          | 45.8%   |
-
-Harbor evals are the primary product judge for this slice (manual; not CI). See [`eval/README.md`](eval/README.md).
+Harbor evals are the primary product judge for this slice (manual; not CI).
 
 ---
 

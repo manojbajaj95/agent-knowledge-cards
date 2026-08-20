@@ -37,8 +37,9 @@ bun run build
 bun run knowcards install cursor|claude-code|codex
 bun run knowcards status|query|propose|mcp
 bun run eval:prepare     # Harbor — manual
-bun run eval:run -- --task repo-map --agent oracle
-bun run eval:run -- --task repo-map  # pi@0.84.2 + openai/gpt-5.6-luna
+bun run eval:run -- --task pytest-dev__pytest-10051 --agent oracle
+bun run eval:run -- --task pytest-dev__pytest-10051  # pi@0.84.2 + openai/gpt-5.6-luna
+bun run eval:run  # four SWE-bench Verified tasks
 ```
 
 Use **bun** for local scripts (`bun test`, `bun run …`). The published package targets **Node** (`npx knowcards`); retrieval uses MiniSearch (no `bun:sqlite`).

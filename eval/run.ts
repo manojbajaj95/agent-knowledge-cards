@@ -5,9 +5,9 @@
  * and API credentials for the chosen agent/model.
  *
  * Usage:
- *   bun run eval/run.ts -- --task repo-map
- *   bun run eval/run.ts -- --task payments-cents --agent oracle
- *   bun run eval/run.ts -- --task repo-map --model openai/gpt-5.6-luna
+ *   bun run eval/run.ts -- --task pytest-dev__pytest-10051
+ *   bun run eval/run.ts -- --task pytest-dev__pytest-10051 --agent oracle
+ *   bun run eval/run.ts -- --model openai/gpt-5.6-luna
  */
 import { mkdir } from "node:fs/promises";
 import { dirname, join, resolve } from "node:path";
@@ -16,6 +16,7 @@ import { compareJobDirs } from "./compare.ts";
 import { formatCompareReport } from "./metrics.ts";
 import {
   CONTAINER_CARDS_ROOT,
+  EVAL_PI_VERSION,
   KNOWCARDS_TGZ,
   type PreparedTask,
   prepareHarborDataset,
@@ -26,11 +27,9 @@ const DEFAULT_JOBS = join(EVAL_DIR, "jobs");
 /** Default Harbor agent for LLM A/B runs (pinned barebones Pi). */
 export const DEFAULT_EVAL_AGENT = "pi";
 /** Pinned Pi npm package version (`@earendil-works/pi-coding-agent`). */
-export const DEFAULT_PI_VERSION = "0.84.2";
+export const DEFAULT_PI_VERSION = EVAL_PI_VERSION;
 /** Default model: GPT-5.6 Luna (Harbor/OpenAI id). */
 export const DEFAULT_EVAL_MODEL = "openai/gpt-5.6-luna";
-/** Default task optimized for cost/time savings (solvable both arms). */
-export const DEFAULT_EVAL_TASK = "repo-map";
 
 const KNOWCARDS_SKILL = resolve(EVAL_DIR, "..", "skills", "knowcards");
 const HARBOR_PI_BARE = "harbor_pi:PiBare";
@@ -88,7 +87,7 @@ function parseArgs(argv: string[]): RunOpts {
   return {
     agent,
     model,
-    taskIds: taskIds.length ? taskIds : [DEFAULT_EVAL_TASK],
+    taskIds,
     jobsDir,
     nAttempts,
     piVersion,
@@ -264,7 +263,7 @@ async function runTaskAb(
 async function main(): Promise<void> {
   const opts = parseArgs(process.argv.slice(2));
   const { datasetDir, knowcardsTgz, tasks } = await prepareHarborDataset(
-    opts.taskIds,
+    opts.taskIds.length ? opts.taskIds : undefined,
   );
   console.log(`Dataset ready: ${datasetDir}`);
   console.log(`knowcards.tgz: ${knowcardsTgz}`);
