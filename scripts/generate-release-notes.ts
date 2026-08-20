@@ -124,16 +124,24 @@ function previousTag(repo: string, tag: string): string {
   const currentIndex = releases.findIndex(
     (release) => release.tag_name === tag,
   );
-  if (currentIndex === -1) {
-    throw new Error(`Could not find GitHub release for tag ${tag}`);
-  }
-  const previous = releases
-    .slice(currentIndex + 1)
-    .find((release) => release.tag_name !== tag)?.tag_name;
-  if (!previous) {
+  // Before the release PR merges, the proposed tag is not a GitHub release yet.
+  // Use the latest published tag as the range start.
+  const previous =
+    currentIndex === -1
+      ? releases[0]?.tag_name
+      : releases
+          .slice(currentIndex + 1)
+          .find((release) => release.tag_name !== tag)?.tag_name;
+  if (!previous || previous === tag) {
     throw new Error(`Could not determine previous release tag for ${tag}`);
   }
   return previous;
+}
+
+function compareHead(tag: string, env: NodeJS.ProcessEnv): string {
+  const sha = env.GITHUB_SHA?.trim();
+  if (sha) return sha;
+  return tag;
 }
 
 function loadPullRequest(repo: string, number: number): PullRequest {
@@ -175,9 +183,10 @@ function loadContext(tag: string, env: NodeJS.ProcessEnv): ReleaseContext {
   if (!normalized) throw new Error("Release tag is empty");
   const repo = repository(env);
   const previous = previousTag(repo, normalized);
+  const head = compareHead(normalized, env);
   const compare = ghJson<{
     commits: Array<{ commit?: { message?: string } }>;
-  }>(["api", `repos/${repo}/compare/${previous}...${normalized}`]);
+  }>(["api", `repos/${repo}/compare/${previous}...${head}`]);
   const numbers = [
     ...new Set(
       compare.commits

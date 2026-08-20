@@ -69,7 +69,7 @@ If you pull a hypothesis forward from [`ROADMAP.md`](ROADMAP.md), leave a clear 
 | MCP (dev) | `bun run knowcards mcp` / `npx knowcards mcp` |
 | Pre-commit | Biome check + trailing whitespace / YAML / large files |
 | CI | `.github/workflows/ci.yml` (lint, typecheck, build, test) |
-| Release | Release Please → git tag → OIDC `npm publish` (`.github/workflows/release-please.yml`) |
+| Release | Release Please opens a PR (enhanced `CHANGELOG.md`) → merge tags → OIDC `npm publish` (`.github/workflows/release-please.yml`) |
 
 Harbor evals are not run in CI.
 
