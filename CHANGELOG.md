@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.3.0](https://github.com/manojbajaj95/agent-knowledge-cards/compare/knowcards-v0.2.0...knowcards-v0.3.0) (2026-08-20)
+
+
+### Features
+
+* cap reflect proposes and add update/delete CLI ([4f593c2](https://github.com/manojbajaj95/agent-knowledge-cards/commit/4f593c29b86d289d6a1f8467dde218d891cebf1b))
+
 ## [0.2.0](https://github.com/manojbajaj95/agent-knowledge-cards/compare/knowcards-v0.1.0...knowcards-v0.2.0) (2026-08-20)
 
 
