@@ -1,4 +1,4 @@
-import { mkdir, readdir, readFile, writeFile } from "node:fs/promises";
+import { mkdir, readdir, readFile, unlink, writeFile } from "node:fs/promises";
 import { join } from "node:path";
 import { parseCardMarkdown, serializeCardMarkdown } from "./markdown.ts";
 import {
@@ -19,7 +19,6 @@ import {
  * for multiplayer or production later.
  *
  * TODO: database storage backend (multiplayer / production)
- * TODO: full CRUD (update / delete) when cards are stale or edited
  */
 export interface CardStorage {
   readonly root: string;
@@ -29,6 +28,8 @@ export interface CardStorage {
   loadAll(): Promise<KnowledgeLibrary>;
   /** Write one card markdown file under notebookId/slug.md. */
   writeCard(notebookId: string, card: KnowledgeCard): Promise<void>;
+  /** Delete notebookId/slug.md. */
+  deleteCard(notebookId: string, slug: string): Promise<void>;
 }
 
 /** Local filesystem backend: one directory per notebook, one `.md` per card. */
@@ -80,6 +81,24 @@ export class FsCardStorage implements CardStorage {
     await mkdir(dir, { recursive: true });
     const path = join(dir, `${card.slug}.md`);
     await writeFile(path, serializeCardMarkdown(card), "utf8");
+  }
+
+  async deleteCard(notebookId: string, slug: string): Promise<void> {
+    const path = join(this.root, notebookId, `${slug}.md`);
+    try {
+      await unlink(path);
+    } catch (err) {
+      const code =
+        err && typeof err === "object" && "code" in err
+          ? String((err as { code: unknown }).code)
+          : "";
+      if (code === "ENOENT") {
+        throw new Error(
+          `Card file "${slug}.md" not found in notebook "${notebookId}"`,
+        );
+      }
+      throw err;
+    }
   }
 }
 

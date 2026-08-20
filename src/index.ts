@@ -1,7 +1,12 @@
 export {
+  type DeleteCardResult,
+  deleteCard,
   type ProposeCardInput,
   type ProposeCardResult,
   proposeCard,
+  type UpdateCardInput,
+  type UpdateCardResult,
+  updateCard,
 } from "./core/ingestion.ts";
 export {
   formatCardsForInject,

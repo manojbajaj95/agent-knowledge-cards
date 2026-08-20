@@ -45,6 +45,11 @@ npx knowcards install codex
 npx knowcards propose --title "JWT auth header" \
   "JWTs go in the Authorization header"
 
+# Change or remove a card
+npx knowcards update jwt-auth-header --title "JWT auth header" \
+  "JWTs go in the Authorization header as Bearer"
+npx knowcards delete jwt-auth-header
+
 # Search the local card library
 npx knowcards query jwt
 
@@ -92,7 +97,7 @@ With hooks installed, inject and end-of-session reflect run automatically. The m
 2. **Apply hits** — Prefer card facts. Verify against the repo when a card may be old.
 3. **Propose at end** — Write durable facts from the *outcome* (what proved true), not the path you took. One atomic fact per card.
 
-Do not propose plans, unverified guesses, or near-duplicates. Query first; if a card already covers it, skip.
+Do not propose plans or unverified guesses. Near-duplicates are fine; bookkeeping is separate.
 
 ---
 

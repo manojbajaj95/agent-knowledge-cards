@@ -3,10 +3,10 @@ name: knowcards
 description: >
   Query and propose local knowledge cards for this repo. Always use at
   the start of work here — run `npx knowcards query` before acting. Also
-  use when wrapping up after proving a durable nuance, guideline, domain
-  learning, or do/don't (propose a card). Skip only for routine edits in
-  code you already hold with no repo nuance at stake, or if you already
-  queried this topic in the session.
+  use when wrapping up if this session proved a durable repo fact that
+  later work will reuse (at most 2 cards). Skip propose when nothing
+  would change a later action. Skip query only for routine edits in code
+  you already hold, or if you already queried this topic in the session.
 ---
 
 # Knowcards CLI
@@ -25,7 +25,8 @@ Run from the repo root
 npx knowcards status
 npx knowcards query "<keywords>"
 npx knowcards propose --title "<title>" "<body>"
-npx knowcards --root <dir> <command>
+npx knowcards update <id-or-slug> --title "<title>" "<body>"
+npx knowcards delete <id-or-slug>
 ```
 
 
@@ -34,6 +35,10 @@ npx knowcards --root <dir> <command>
 | `status`  | Show card counts.                                        |
 | `query`   | Search cards by keywords. Empty query returns all cards. |
 | `propose` | Write one card now. Title and body is required           |
+| `update`  | Change title, body, or use-when of an existing card      |
+| `delete`  | Remove a card by id or slug                              |
+
+
 
 
 ## Core protocol
@@ -42,11 +47,11 @@ Follow this loop for every task:
 
 1. **Before acting** — Run `npx knowcards query` with task keywords. Skip only for routine edits in code you already hold with no repo nuance at stake.
 2. **Apply hits** — Prefer card facts while you work. Verify against the repo when the card may be old.
-3. **Propose at end** — When the task is done, propose durable facts from the **outcome** (what proved true), not from the path you took. If a card was wrong, propose a corrected card with a new title (update/delete are not available).
+3. **Propose at end (optional)** — Default is skip. Propose at most 2 cards, and only if the next session would take a different action without the fact. Write from the **outcome** (what proved true), not the path you took. Do not skip for near-duplicates.
 
 **Rationalization check (query).** If you think "I already know this" or "I have a plan, I will just write files," stop and query.
 
-**Rationalization check (propose).** If you think "the fix already shipped" or "the user already has the answer," stop. If the outcome taught a repo nuance, propose before you close.
+**Rationalization check (propose).** Default is skip. Propose only if a later session would do the wrong thing without this fact.
 
 ## When to query
 
@@ -58,15 +63,17 @@ Use short keywords. Prefer a focused query over an empty one when the library is
 
 ## When to propose
 
-At the **end of the task**, propose nuances about this repo that help the next session: coding guidelines, domain learnings, and durable dos/don'ts.
+Default is skip. At task end, propose at most 2 cards, and only if the next session would take a different action without the fact.
+
+Propose a repo nuance proven this session. Do not query or skip for near-duplicates. Bookkeeping is separate.
 
 Do not propose:
 
 - Steps or plans from this turn
 - Unverified guesses
-- Near-duplicates — query first; if a card already covers it, skip
+- One-run incident notes or numbers
 
-Write one atomic fact per card.
+Write one fact per card.
 
 ```bash
 npx knowcards propose \
@@ -79,17 +86,23 @@ Card shape:
 - **Title** — clear and unique. The filename slug comes from the title. Duplicate titles fail.
 - **Body** — one short durable fact. Prefer an imperative action when useful (`Use bun test…`).
 
+
+
 ## Post-error sequence
 
 1. Query with keywords from the error (module, API, message).
 2. If a card hits, apply it and continue.
-3. If none hit, fix and verify, then at task end propose the durable lesson from the outcome.
+3. If none hit, fix and verify. At task end, propose only if a later session would hit the same trap.
+
+
 
 ## Trust rule
 
-When a card and the workspace disagree, prefer the card unless new evidence shows the card is wrong. Then fix the work and propose a corrected card with a new title.
+When a card and the workspace disagree, prefer the card unless new evidence shows the card is wrong. Then fix the work and `npx knowcards update <id-or-slug>` (or `delete` if the fact is gone).
 
 ## Examples
+
+
 
 ### Query before unfamiliar work
 

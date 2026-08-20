@@ -5,7 +5,7 @@ import { fileURLToPath } from "node:url";
 const OVERRIDE_FILENAME = "REFLECT.md";
 
 const MISSING_PACKAGED =
-  "Propose durable knowledge cards with `npx knowcards propose`. Skip if nothing durable was learned.";
+  "Propose at most 2 durable cards with `npx knowcards propose`. Default is skip.";
 
 /**
  * Load the reflection prompt: project-root REFLECT.md if present, else packaged default.
@@ -43,9 +43,9 @@ export function formatReflectFollowup(reflectPrompt: string): string {
   return [
     "KNOWLEDGE CARDS — end-of-session reflection",
     "",
-    "Before you stop, capture durable knowledge about this codebase that will help later sessions.",
-    "Use `npx knowcards propose` (or the knowcards MCP `propose` tool). One atomic fact per card.",
-    "Skip if nothing durable was learned.",
+    "Default is skip. Propose at most 2 cards that later sessions will reuse.",
+    "Use `npx knowcards propose` (or the knowcards MCP `propose` tool).",
+    "If the next session would act the same without the card, propose nothing.",
     "",
     "--- reflection guidance ---",
     reflectPrompt.trim(),

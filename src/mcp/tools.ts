@@ -1,4 +1,4 @@
-import { proposeCard } from "../core/ingestion.ts";
+import { deleteCard, proposeCard, updateCard } from "../core/ingestion.ts";
 import { queryLibrary } from "../core/retrieval.ts";
 import {
   FsCardStorage,
@@ -91,6 +91,54 @@ export async function toolPropose(args: {
     });
     await storage.writeCard(notebookId, card);
     return ok(card);
+  } catch (err) {
+    return fail(err instanceof Error ? err.message : String(err));
+  }
+}
+
+/** Update a card by id or slug. */
+export async function toolUpdate(args: {
+  idOrSlug: string;
+  title?: string;
+  body?: string;
+  useWhen?: string;
+  notebook?: string;
+  root?: string;
+}): Promise<ToolTextResult> {
+  const root = args.root ?? DEFAULT_CARDS_ROOT;
+  const notebookId = args.notebook ?? DEFAULT_NOTEBOOK_ID;
+  const { storage, library } = await openLibrary(root);
+  try {
+    const nb = requireNotebook(library, notebookId);
+    const { card, previousSlug } = updateCard(nb, args.idOrSlug, {
+      title: args.title,
+      body: args.body,
+      useWhen: args.useWhen,
+    });
+    await storage.writeCard(notebookId, card);
+    if (previousSlug !== card.slug) {
+      await storage.deleteCard(notebookId, previousSlug);
+    }
+    return ok(card);
+  } catch (err) {
+    return fail(err instanceof Error ? err.message : String(err));
+  }
+}
+
+/** Delete a card by id or slug. */
+export async function toolDelete(args: {
+  idOrSlug: string;
+  notebook?: string;
+  root?: string;
+}): Promise<ToolTextResult> {
+  const root = args.root ?? DEFAULT_CARDS_ROOT;
+  const notebookId = args.notebook ?? DEFAULT_NOTEBOOK_ID;
+  const { storage, library } = await openLibrary(root);
+  try {
+    const nb = requireNotebook(library, notebookId);
+    const { card } = deleteCard(nb, args.idOrSlug);
+    await storage.deleteCard(notebookId, card.slug);
+    return ok({ deleted: true, card });
   } catch (err) {
     return fail(err instanceof Error ? err.message : String(err));
   }

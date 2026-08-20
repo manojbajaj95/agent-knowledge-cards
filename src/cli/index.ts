@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 import { createRequire } from "node:module";
 import { Command } from "commander";
-import { proposeCard } from "../core/ingestion.ts";
+import { deleteCard, proposeCard, updateCard } from "../core/ingestion.ts";
 import { queryLibrary } from "../core/retrieval.ts";
 import {
   FsCardStorage,
@@ -106,6 +106,56 @@ program
       console.log(JSON.stringify(card, null, 2));
     },
   );
+
+program
+  .command("update")
+  .description("update a card by id or slug (title change may rename the file)")
+  .argument("<id-or-slug>", "card id or slug")
+  .option("--title <text>", "new title")
+  .option("--use-when <text>", "new use-when hint (empty clears it)")
+  .option("--notebook <id>", "notebook id", DEFAULT_NOTEBOOK_ID)
+  .argument("[body...]", "new card body")
+  .action(
+    async (
+      idOrSlug: string,
+      bodyParts: string[],
+      opts: {
+        title?: string;
+        useWhen?: string;
+        notebook: string;
+      },
+      cmd,
+    ) => {
+      const { root } = cmd.optsWithGlobals() as { root: string };
+      const { storage, library } = await openLibrary(root);
+      const nb = requireNotebook(library, opts.notebook);
+      const body = bodyParts.join(" ").trim();
+      const { card, previousSlug } = updateCard(nb, idOrSlug, {
+        title: opts.title,
+        body: body || undefined,
+        useWhen: opts.useWhen === undefined ? undefined : opts.useWhen,
+      });
+      await storage.writeCard(opts.notebook, card);
+      if (previousSlug !== card.slug) {
+        await storage.deleteCard(opts.notebook, previousSlug);
+      }
+      console.log(JSON.stringify(card, null, 2));
+    },
+  );
+
+program
+  .command("delete")
+  .description("delete a card by id or slug")
+  .argument("<id-or-slug>", "card id or slug")
+  .option("--notebook <id>", "notebook id", DEFAULT_NOTEBOOK_ID)
+  .action(async (idOrSlug: string, opts: { notebook: string }, cmd) => {
+    const { root } = cmd.optsWithGlobals() as { root: string };
+    const { storage, library } = await openLibrary(root);
+    const nb = requireNotebook(library, opts.notebook);
+    const { card } = deleteCard(nb, idOrSlug);
+    await storage.deleteCard(opts.notebook, card.slug);
+    console.log(JSON.stringify({ deleted: true, card }, null, 2));
+  });
 
 program
   .command("install")

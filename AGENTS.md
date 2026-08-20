@@ -14,7 +14,7 @@ Two boxes: **memory** (units, ingest, retrieve, reflect) and **adapters** (how a
 
 - `src/core/` — L1 memory internals (ingest, retrieve, inject wording, reflect prompts) + abstract storage. Host-agnostic.
 - `src/lifecycle/` — session retrieve + reflect follow-up strings. Memory, not a host SDK.
-- `src/cli/` — thin CLI over memory (`status`, `query`, `propose`, `mcp`) plus `install` (adapter wiring). `init` is hidden; propose creates dirs.
+- `src/cli/` — thin CLI over memory (`status`, `query`, `propose`, `update`, `delete`, `mcp`) plus `install` (adapter wiring). `init` is hidden; propose creates dirs.
 - `src/adapters/` — host hook envelopes (Claude Code / Cursor / Codex). Do not import `src/core`.
 - `src/mcp/` — MCP stdio server (`@modelcontextprotocol/sdk`); tool logic in `tools.ts`.
 - `eval/` — Harbor A/B with/without knowcards (`eval:prepare` / `eval:run` / `eval:compare`). **Primary validation** for this slice (manual; not CI). Sequential same-repo runs are named only.
@@ -35,7 +35,7 @@ bun run typecheck
 bun run lint
 bun run build
 bun run knowcards install cursor|claude-code|codex
-bun run knowcards status|query|propose|mcp
+bun run knowcards status|query|propose|update|delete|mcp
 bun run eval:prepare     # Harbor — manual
 bun run eval:run -- --task pytest-dev__pytest-10051 --agent oracle
 bun run eval:run -- --task pytest-dev__pytest-10051  # pi@0.84.2 + openai/gpt-5.6-luna

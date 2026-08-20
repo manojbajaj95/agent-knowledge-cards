@@ -6,6 +6,7 @@ import {
   reflectFollowupFromPayload,
   shouldSkipReflect,
 } from "../src/adapters/run.ts";
+import { deleteCard, proposeCard, updateCard } from "../src/core/ingestion.ts";
 import { formatCardsForInject, slugsFromInject } from "../src/core/inject.ts";
 import { queryLibrary } from "../src/core/retrieval.ts";
 import { openLibrary } from "../src/core/storage.ts";
@@ -179,5 +180,36 @@ describe("retrieve and inject", () => {
       null,
     );
     expect(await reflectFollowupFromPayload({ loop_count: 1 })).toBe(null);
+  });
+
+  test("update renames the file when title changes; delete unlinks it", async () => {
+    const root = await mkdtemp(join(tmpdir(), "kc-crud-"));
+    temps.push(root);
+    const { storage, library } = await openLibrary(root);
+    const nb = library.notebooks[0] ?? { id: "default", cards: [] };
+    const { card: created } = proposeCard(nb, {
+      title: "Old title",
+      body: "first",
+    });
+    await storage.writeCard("default", created);
+    const { card: updated, previousSlug } = updateCard(
+      { id: "default", cards: [created] },
+      created.slug,
+      { title: "New title", body: "second" },
+    );
+    await storage.writeCard("default", updated);
+    await storage.deleteCard("default", previousSlug);
+    const afterUpdate = await openLibrary(root);
+    expect(afterUpdate.library.notebooks[0]?.cards.map((c) => c.slug)).toEqual([
+      "new-title",
+    ]);
+    expect(afterUpdate.library.notebooks[0]?.cards[0]?.body).toBe("second");
+    const { card: removed } = deleteCard(
+      afterUpdate.library.notebooks[0] ?? { id: "default", cards: [] },
+      "new-title",
+    );
+    await storage.deleteCard("default", removed.slug);
+    const afterDelete = await openLibrary(root);
+    expect(afterDelete.library.notebooks[0]?.cards).toEqual([]);
   });
 });

@@ -1,35 +1,20 @@
-Capture durable knowledge about this codebase (and its domain) that will help later sessions. Reflect on what this session taught about the codebase — not on the particular task.
+Default is zero cards. Propose only when the next session would take a different action without this fact.
 
-Propose cards only when the fact will speed or protect later work:
+A card must be both:
+- Proven this session (not a guess)
+- Reusable on later work in this repo
 
-Architecture
-- What owns what; where live code lives vs dead or decoy paths
-- Important boundaries (packages, services, layers) and what must not cross them
+Keep facts such as: live path vs decoy, a contract or unit callers must respect, a proven gotcha, a command the README gets wrong.
 
-Dependencies & contracts
-- Libraries, APIs, formats, units, and invariants callers must respect
-- Version or platform constraints that bite if ignored
+Skip:
+- Session diary, plans, diffs, stack traces, one-run numbers
+- Facts a later agent can re-read from the tree in one lookup
+- One card per theme. Do not fill a checklist.
 
-Gotchas
-- Misleading docs, traps, and surprises proven this session
-- Failure modes that look like something else
+Do not query or skip for near-duplicates. Bookkeeping is separate.
 
-Conventions
-- How this repo builds, tests, names, and ships (commands and patterns in use)
+Cap: at most 2 cards. Prefer 1. If unsure, propose nothing.
 
-Undocumented why
-- Decisions that are not in the README but explain the shape of the code
-- Prefer the reason plus the rule, not a history essay
-
-Do / don't
-- Concrete actions for this repo: what to do, what to avoid, and when
-
-Prefer concrete state over slogans. Prefer the outcome (what proved true) over the path you took.
-
-Do NOT propose: session plans, TODOs, full diffs, stack traces, raw dumps, generic advice with no repo fact, guesses you did not verify, or near-duplicates of cards you already hold (query first if unsure).
-
-Card shape for propose:
-- --title: clear, unique, slug-friendly
-- body: one short durable fact (imperative when useful)
-
-If nothing durable was learned, propose nothing.
+Card shape:
+- --title: unique, slug-friendly
+- body: one short fact the next agent can apply

@@ -6,7 +6,14 @@
 import { createRequire } from "node:module";
 import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { z } from "zod";
-import { toolInit, toolPropose, toolQuery, toolStatus } from "./tools.ts";
+import {
+  toolDelete,
+  toolInit,
+  toolPropose,
+  toolQuery,
+  toolStatus,
+  toolUpdate,
+} from "./tools.ts";
 
 const pkg = createRequire(import.meta.url)("../../package.json") as {
   name: string;
@@ -81,10 +88,50 @@ export function createKnowledgeCardsServer(): McpServer {
     async (args) => toolPropose(args),
   );
 
+  server.registerTool(
+    "update",
+    {
+      title: "Update knowledge card",
+      description: "Update a knowledge card by id or slug",
+      inputSchema: {
+        idOrSlug: z.string().describe("Card id or slug"),
+        title: z.string().optional().describe("New title"),
+        body: z.string().optional().describe("New body"),
+        useWhen: z
+          .string()
+          .optional()
+          .describe("New use-when hint (empty clears it)"),
+        notebook: z
+          .string()
+          .optional()
+          .describe("Notebook id (default: default)"),
+        root: z.string().optional().describe("Cards root directory"),
+      },
+    },
+    async (args) => toolUpdate(args),
+  );
+
+  server.registerTool(
+    "delete",
+    {
+      title: "Delete knowledge card",
+      description: "Delete a knowledge card by id or slug",
+      inputSchema: {
+        idOrSlug: z.string().describe("Card id or slug"),
+        notebook: z
+          .string()
+          .optional()
+          .describe("Notebook id (default: default)"),
+        root: z.string().optional().describe("Cards root directory"),
+      },
+    },
+    async (args) => toolDelete(args),
+  );
+
   return server;
 }
 
 /** Tool names registered on the MCP server. */
 export function listTools(): string[] {
-  return ["init", "status", "query", "propose"];
+  return ["init", "status", "query", "propose", "update", "delete"];
 }
