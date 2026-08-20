@@ -160,20 +160,36 @@ program
 program
   .command("install")
   .description(
-    "install session hooks for a host (claude-code | cursor | codex)",
+    "install session hooks for a host (claude-code | cursor | codex | pi)",
   )
-  .argument("<host>", "claude-code | cursor | codex")
-  .action(async (hostArg: string) => {
+  .argument("<host>", "claude-code | cursor | codex | pi")
+  .option(
+    "--global",
+    "pi only: write ~/.pi/agent/extensions (loaded in print mode)",
+  )
+  .action(async (hostArg: string, opts: { global?: boolean }) => {
     const host = hostArg.trim().toLowerCase();
-    if (host !== "claude-code" && host !== "cursor" && host !== "codex") {
+    if (
+      host !== "claude-code" &&
+      host !== "cursor" &&
+      host !== "codex" &&
+      host !== "pi"
+    ) {
       console.error(
-        `Unknown host "${hostArg}". Use: claude-code | cursor | codex`,
+        `Unknown host "${hostArg}". Use: claude-code | cursor | codex | pi`,
       );
       process.exitCode = 1;
       return;
     }
+    if (opts.global && host !== "pi") {
+      console.error('--global is only valid with host "pi"');
+      process.exitCode = 1;
+      return;
+    }
     const { installHost } = await import("./install.ts");
-    const result = await installHost(host);
+    const result = await installHost(host, process.cwd(), {
+      global: opts.global,
+    });
     console.log(
       JSON.stringify(
         {

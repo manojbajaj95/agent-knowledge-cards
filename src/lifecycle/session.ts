@@ -1,16 +1,19 @@
 /**
  * Memory session API: retrieve + format on prompt, reflect follow-up on stop.
- * Host adapters wrap these strings into Claude Code / Cursor / Codex envelopes.
+ * Host adapters wrap these strings into Claude Code / Cursor / Codex / Pi envelopes.
  */
 
 import { formatCardsForInject } from "../core/inject.ts";
 import {
   formatReflectFollowup,
   loadReflectPrompt,
+  REFLECT_FOLLOWUP_TITLE,
 } from "../core/reflection.ts";
 import { queryLibrary } from "../core/retrieval.ts";
 import { openLibrary } from "../core/storage.ts";
 import { DEFAULT_CARDS_ROOT, type KnowledgeCard } from "../core/types/index.ts";
+
+export { REFLECT_FOLLOWUP_TITLE };
 
 /** Max cards per inject. */
 export const INJECT_CARD_CAP = 8;

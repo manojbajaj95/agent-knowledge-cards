@@ -4,6 +4,10 @@ import { fileURLToPath } from "node:url";
 
 const OVERRIDE_FILENAME = "REFLECT.md";
 
+/** First line of the Stop follow-up. Hosts skip inject when the prompt is this turn. */
+export const REFLECT_FOLLOWUP_TITLE =
+  "KNOWLEDGE CARDS — end-of-session reflection";
+
 const MISSING_PACKAGED =
   "Propose at most 2 durable cards with `npx knowcards propose`. Default is skip.";
 
@@ -41,7 +45,7 @@ async function loadPackagedDefault(): Promise<string> {
  */
 export function formatReflectFollowup(reflectPrompt: string): string {
   return [
-    "KNOWLEDGE CARDS — end-of-session reflection",
+    REFLECT_FOLLOWUP_TITLE,
     "",
     "Default is skip. Propose at most 2 cards that later sessions will reuse.",
     "Use `npx knowcards propose` (or the knowcards MCP `propose` tool).",

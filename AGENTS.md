@@ -15,7 +15,7 @@ Two boxes: **memory** (units, ingest, retrieve, reflect) and **adapters** (how a
 - `src/core/` — L1 memory internals (ingest, retrieve, inject wording, reflect prompts) + abstract storage. Host-agnostic.
 - `src/lifecycle/` — session retrieve + reflect follow-up strings. Memory, not a host SDK.
 - `src/cli/` — thin CLI over memory (`status`, `query`, `propose`, `update`, `delete`, `mcp`) plus `install` (adapter wiring). `init` is hidden; propose creates dirs.
-- `src/adapters/` — host hook envelopes (Claude Code / Cursor / Codex). Do not import `src/core`.
+- `src/adapters/` — host hook envelopes (Claude Code / Cursor / Codex) and the Pi extension. Do not import `src/core`.
 - `src/mcp/` — MCP stdio server (`@modelcontextprotocol/sdk`); tool logic in `tools.ts`.
 - `eval/` — Harbor A/B with/without knowcards (`eval:prepare` / `eval:run` / `eval:compare`). **Primary validation** for this slice (manual; not CI). Sequential same-repo runs are named only.
 - `tests/eval.test.ts` — offline checks for the eval pipeline (prepare / metrics / compare). No separate unit-test suite.
@@ -34,7 +34,7 @@ bun test                 # eval pipeline offline checks only
 bun run typecheck
 bun run lint
 bun run build
-bun run knowcards install cursor|claude-code|codex
+bun run knowcards install cursor|claude-code|codex|pi
 bun run knowcards status|query|propose|update|delete|mcp
 bun run eval:prepare     # Harbor — manual
 bun run eval:run -- --task pytest-dev__pytest-10051 --agent oracle

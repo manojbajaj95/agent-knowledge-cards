@@ -16,6 +16,7 @@
     "./adapters/claude-code-reflect": "./dist/adapters/claude-code-reflect.js",
     "./adapters/cursor-inject": "./dist/adapters/cursor-inject.js",
     "./adapters/cursor-reflect": "./dist/adapters/cursor-reflect.js",
+    "./adapters/pi": "./dist/adapters/pi.js",
     "./adapters/codex-inject": "./dist/adapters/codex-inject.js",
     "./adapters/codex-reflect": "./dist/adapters/codex-reflect.js"
   },

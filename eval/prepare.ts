@@ -7,7 +7,7 @@
  * cards/<notebook-id>/*.md
  *
  * Each template becomes one Harbor task (same instruction/env/tests for both
- * arms). Arms differ only at harbor-run time (bare Pi vs Pi + skill + CLI).
+ * arms). Arms differ only at harbor-run time (bare Pi vs Pi + extension + CLI).
  * Prepare appends a Node+Pi bake to the official Dockerfile and sets
  * skills_dir. Seed cards land in seed_cards/ (outside environment/) so they
  * are not in the Docker image. Each task keeps exactly one seed card. The

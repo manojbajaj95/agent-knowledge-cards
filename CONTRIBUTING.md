@@ -28,7 +28,7 @@ bun run eval:run -- --task pytest-dev__pytest-10051                  # pi@0.84.2
 bun run eval:run                                                     # all four SWE-bench Verified tasks
 ```
 
-Same SWE-bench Verified issue, with vs without knowcards (skill + CLI on pinned Pi). Instruction, tests, and gold oracle come from Harbor `swe-bench/swe-bench-verified`. The seed card names the live file.
+Same SWE-bench Verified issue, with vs without knowcards (Pi extension + CLI on pinned Pi). Instruction, tests, and gold oracle come from Harbor `swe-bench/swe-bench-verified`. The seed card names the live file.
 
 A second eval kind (**sequential**: same repo, 3–4 tasks, cards persist) is named in [`eval/README.md`](eval/README.md) but not wired yet.
 
@@ -41,7 +41,7 @@ Details: [`eval/README.md`](eval/README.md). Research map: [`ROADMAP.md`](ROADMA
 Contributors are welcome. You can help in these ways:
 
 - **Hypotheses**: Add a new entry to [`ROADMAP.md`](ROADMAP.md) (or open an issue that links a draft entry). Name one knob from that file, the A/B arms, and a cite when you have one.
-- **Plugins / lifecycle**: Wire hosts in `src/adapters/` (hook envelopes) or `src/mcp/`. Keep `src/core` free of host SDKs (Cursor, MCP). Adapters must not import `src/core`. Inject prompt wording may live in `src/core/inject.ts`. Install with `knowcards install <host>` only — do not add a `hook` CLI. Keep inject hooks synchronous. Claude Code Stop may use `asyncRewake`; do not set `async` on Cursor or Codex Stop.
+- **Plugins / lifecycle**: Wire hosts in `src/adapters/` (hook envelopes or the Pi extension) or `src/mcp/`. Keep `src/core` free of host SDKs (Cursor, MCP, Pi). Adapters must not import `src/core`. Inject prompt wording may live in `src/core/inject.ts`. Install with `knowcards install <host>` only — do not add a `hook` CLI. Keep inject hooks synchronous. Claude Code Stop may use `asyncRewake`; do not set `async` on Cursor or Codex Stop. Pi reflects on `agent_end` (follow-up after the final answer).
 - **Task families**: Add Harbor tasks under `eval/templates/` so the eval suite can test more memory questions.
 
 Read [`ROADMAP.md`](ROADMAP.md) before large research work. Eval uses Harbor. Pin harness versions. Log which knob you changed. Product shape is in [`README.md`](README.md#how-it-works).

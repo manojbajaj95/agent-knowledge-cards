@@ -19,6 +19,7 @@ export { parseCardMarkdown, serializeCardMarkdown } from "./core/markdown.ts";
 export {
   formatReflectFollowup,
   loadReflectPrompt,
+  REFLECT_FOLLOWUP_TITLE,
 } from "./core/reflection.ts";
 export { getCard, queryCards, queryLibrary } from "./core/retrieval.ts";
 export { slugify } from "./core/slug.ts";

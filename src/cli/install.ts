@@ -1,9 +1,11 @@
 import { mkdir, readFile, writeFile } from "node:fs/promises";
+import { homedir } from "node:os";
 import { dirname, join } from "node:path";
 import {
   type AdapterAction,
   adapterCommand,
   type HostId,
+  piExtensionImportSpec,
 } from "./resolve-adapter.ts";
 
 type JsonObject = Record<string, unknown>;
@@ -155,9 +157,27 @@ async function installCodex(cwd: string): Promise<string[]> {
   return [hooksPath];
 }
 
+async function installPi(
+  cwd: string,
+  opts: { global?: boolean } = {},
+): Promise<string[]> {
+  const extDir = opts.global
+    ? join(homedir(), ".pi", "agent", "extensions")
+    : join(cwd, ".pi", "extensions");
+  await mkdir(extDir, { recursive: true });
+  const spec = piExtensionImportSpec(cwd, extDir);
+  const extPath = join(extDir, "knowcards.ts");
+  await writeFile(
+    extPath,
+    `export { default } from ${JSON.stringify(spec)};\n`,
+  );
+  return [extPath];
+}
+
 export async function installHost(
   host: HostId,
   cwd: string = process.cwd(),
+  opts: { global?: boolean } = {},
 ): Promise<{ host: HostId; files: string[]; notes: string[] }> {
   let files: string[];
   const notes: string[] = [];
@@ -194,6 +214,24 @@ export async function installHost(
       );
       notes.push(
         "Stop reflect stays sync: async Codex hooks do not start a new turn",
+      );
+      break;
+    case "pi":
+      files = await installPi(cwd, opts);
+      if (opts.global) {
+        notes.push(
+          "Wrote ~/.pi/agent/extensions/knowcards.ts (print mode / evals)",
+        );
+      } else {
+        notes.push(
+          "Wrote .pi/extensions/knowcards.ts (project; needs Pi trust)",
+        );
+      }
+      notes.push(
+        "Inject appends titles to the system prompt on before_agent_start",
+      );
+      notes.push(
+        "Reflect follow-up runs on agent_end after write/edit (after the final answer)",
       );
       break;
     default: {

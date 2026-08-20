@@ -28,7 +28,7 @@
 >
 > - **Filesystem-first** — cards are plain markdown under `.agents/knowledge_cards`. No DB, no vectors.
 > - **Trusted memory** — hits are preferred over rediscovery or a conflicting README unless the card is stale.
-> - **Host edges** — `install` wires Claude Code / Codex / Cursor hooks; CLI and MCP remain for manual use.
+> - **Host edges** — `install` wires Claude Code / Codex / Cursor hooks and a Pi extension; CLI and MCP remain for manual use.
 
 Coding agents forget between sessions. They re-grep the tree, re-read the README, and still miss the constraint that mattered last time. That wastes tokens and wall clock — and fails when the workspace is wrong.
 
@@ -43,6 +43,7 @@ Knowcards keeps those facts as local cards and reinjects them. The agent prefers
 npx knowcards install cursor
 npx knowcards install claude-code
 npx knowcards install codex
+npx knowcards install pi
 
 # Write a durable fact (creates dirs if needed)
 npx knowcards propose --title "JWT auth header" \
@@ -141,7 +142,7 @@ flowchart LR
   HREF -->|new facts| MI
 ```
 
-The `install` command wires Claude Code, Codex, or Cursor hooks. A prompt retrieves matching cards (MiniSearch) and injects titles. Use `query` or MCP for the full text. Stop continues the same session so the agent can propose. Cards are markdown under `.agents/knowledge_cards`. Knowcards does not bundle an LLM.
+The `install` command wires Claude Code, Codex, or Cursor hooks, or a Pi extension. A prompt retrieves matching cards (MiniSearch) and injects titles. Use `query` or MCP for the full text. After the final answer, Stop (or Pi `agent_end`) continues the same session so the agent can propose. Cards are markdown under `.agents/knowledge_cards`. Knowcards does not bundle an LLM.
 
 - `src/core/` and `src/lifecycle/` — memory
 - `src/adapters/` — host hook envelopes
@@ -156,7 +157,7 @@ The `install` command wires Claude Code, Codex, or Cursor hooks. A prompt retrie
 | [`CONTRIBUTING.md`](CONTRIBUTING.md) | Setup, Harbor evals, how to contribute     |
 | [`SECURITY.md`](SECURITY.md)     | How to report a vulnerability                 |
 | [`AGENTS.md`](AGENTS.md)         | Conventions for agents working in this repo   |
-| [`eval/README.md`](eval/README.md) | Harbor A/B (bare Pi vs skill + CLI) |
+| [`eval/README.md`](eval/README.md) | Harbor A/B (bare Pi vs extension + CLI) |
 | [`skills/knowcards/SKILL.md`](skills/knowcards/SKILL.md) | Agent skill: when to query / propose |
 
 ## License

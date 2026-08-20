@@ -11,7 +11,8 @@ Import via PYTHONPATH=<repo>/eval and ``-a harbor_pi:PiBare`` /
 ``-a harbor_pi:PiWithKnowcards``.
 
 For PiWithKnowcards, mount ``eval/harbor/knowcards.tgz`` at
-``/opt/knowcards.tgz`` (Docker Compose bind volume JSON).
+``/opt/knowcards.tgz`` (Docker Compose bind volume JSON). install() then
+runs ``knowcards install pi --global`` (same factory as local install).
 """
 
 from __future__ import annotations
@@ -61,4 +62,10 @@ class PiWithKnowcards(PiBare):
                 "npm install -g --ignore-scripts /opt/knowcards.tgz; "
                 "knowcards --version"
             ),
+        )
+        # Same factory as `knowcards install pi`. Global path so Harbor
+        # `pi --print --mode json` loads it without project trust.
+        await self.exec_as_agent(
+            environment,
+            command="knowcards install pi --global",
         )
