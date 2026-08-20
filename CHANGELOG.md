@@ -1,5 +1,26 @@
 # Changelog
 
+## [0.2.0](https://github.com/manojbajaj95/agent-knowledge-cards/compare/knowcards-v0.1.0...knowcards-v0.2.0) (2026-08-20)
+
+
+### Features
+
+* add CLI --version from package.json ([f234c41](https://github.com/manojbajaj95/agent-knowledge-cards/commit/f234c4158fe40e6cf57245723a130c55a0040f14))
+* **eval:** pin Pi A/B with skill CLI and with-arm seed mounts ([11b7f96](https://github.com/manojbajaj95/agent-knowledge-cards/commit/11b7f960711ec3ce5a88f4f43072e8a6c716b470))
+* **eval:** switch Harbor A/B to four SWE-bench Verified tasks ([163725d](https://github.com/manojbajaj95/agent-knowledge-cards/commit/163725d29ea32d11d1df33ff6b07ca7544d8a975))
+* **eval:** switch Harbor A/B to four SWE-bench Verified tasks ([1639b50](https://github.com/manojbajaj95/agent-knowledge-cards/commit/1639b5045e893394b0ef4b8f0d6a0bd98a903c46))
+* inject titles only and quiet host hooks ([441ddc1](https://github.com/manojbajaj95/agent-knowledge-cards/commit/441ddc1da5394dbca360693c446c016e7381318c))
+* put Harbor seed cards on disk in the with-arm ([cf8a18d](https://github.com/manojbajaj95/agent-knowledge-cards/commit/cf8a18d6e58ccef4fdf38348bef205c1536556e5))
+* tighter retrieve, title-first inject, and quieter hooks ([51ff611](https://github.com/manojbajaj95/agent-knowledge-cards/commit/51ff611350b12bb3de4966390ca2577c172605c3))
+* wake Claude Code Stop reflect on the same idle session ([df096ca](https://github.com/manojbajaj95/agent-knowledge-cards/commit/df096ca2e918a6a08117cb015be3cb41080dd7af))
+
+
+### Bug Fixes
+
+* budget inject by characters as well as card count ([233c36e](https://github.com/manojbajaj95/agent-knowledge-cards/commit/233c36ec302e9e88058e173761932434dec833cd))
+* **eval:** report uncached input, cache, and agent duration ([7a31dd1](https://github.com/manojbajaj95/agent-knowledge-cards/commit/7a31dd1a9e9d66ff3d9f5a88f049b31bd52df235))
+* skip short Cursor inject rewrites ([d3a66c2](https://github.com/manojbajaj95/agent-knowledge-cards/commit/d3a66c2febf88c69e9fa9c8bbb73eb54ed9d86d0))
+
 ## [0.1.0](https://github.com/manojbajaj95/agent-knowledge-cards/compare/knowcards-v0.0.1...knowcards-v0.1.0) (2026-08-12)
 
 
