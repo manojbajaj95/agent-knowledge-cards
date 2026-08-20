@@ -44,7 +44,7 @@ Contributors are welcome. You can help in these ways:
 - **Plugins / lifecycle**: Wire hosts in `src/adapters/` (hook envelopes) or `src/mcp/`. Keep `src/core` free of host SDKs (Cursor, MCP). Adapters must not import `src/core`. Inject prompt wording may live in `src/core/inject.ts`. Install with `knowcards install <host>` only — do not add a `hook` CLI. Keep inject hooks synchronous. Claude Code Stop may use `asyncRewake`; do not set `async` on Cursor or Codex Stop.
 - **Task families**: Add Harbor tasks under `eval/templates/` so the eval suite can test more memory questions.
 
-Read [`ROADMAP.md`](ROADMAP.md) before large research work. Eval uses Harbor. Pin harness versions. Log which knob you changed. Product shape is in [`README.md`](README.md#product).
+Read [`ROADMAP.md`](ROADMAP.md) before large research work. Eval uses Harbor. Pin harness versions. Log which knob you changed. Product shape is in [`README.md`](README.md#how-it-works).
 
 ## Pull requests
 

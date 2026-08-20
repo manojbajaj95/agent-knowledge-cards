@@ -15,7 +15,7 @@
 [![Cursor](https://img.shields.io/badge/Cursor-hooks-000000?style=flat-square)](https://cursor.com/docs/hooks)
 [![license](https://img.shields.io/github/license/manojbajaj95/agent-knowledge-cards?style=flat-square)](LICENSE)
 
-[Highlights](#highlights) · [Quick start](#quick-start) · [Agent protocol](#agent-protocol) · [How it works](#how-it-works) · [Benchmarks](#benchmarks) · [Docs](#docs)
+[Highlights](#highlights) · [Quick start](#quick-start) · [Agent protocol](#agent-protocol) · [How it works](#how-it-works) · [Docs](#docs)
 
 ---
 
@@ -101,65 +101,13 @@ Do not propose plans, unverified guesses, or near-duplicates. Query first; if a 
 ```
 first prompt → retrieve → inject
 session stop → reflect follow-up → agent proposes cards
-propose → store (markdown) → loadAll → retrieve → inject → host
 ```
 
-| Step | What happens |
-| ---- | ------------ |
-| Install | `knowcards install` merges host hooks (Claude Code / Codex / Cursor) |
-| Inject | On the user prompt, retrieve relevant cards and inject titles (query or MCP for full text) |
-| Reflect | On Stop, the host continues in the **same session** so the agent can propose cards. Claude Code wakes after the turn (`asyncRewake`). Cursor and Codex continue synchronously (host limit). |
-| Propose | Write one fact worth keeping as a card (CLI, MCP, or reflect turn) |
-| Store | One markdown file per card under `.agents/knowledge_cards/<notebook>/` |
-| Load | Full library loads into memory when the process starts |
-| Retrieve | Rank cards for the current query (MiniSearch) |
-| Prefer | Agent treats cards as earned memory over README/rediscovery |
+The `install` command wires Claude Code, Codex, or Cursor hooks. A prompt retrieves matching cards (MiniSearch) and injects titles. Use `query` or MCP for the full text. Stop continues the same session so the agent can propose. Cards are markdown under `.agents/knowledge_cards`. Knowcards does not bundle an LLM.
 
-Knowcards does not bundle an LLM — the primary agent always proposes cards.
-
-### Product
-
-Two boxes:
-
-- **Memory** owns the units and the ops: init, ingest (store), storage, retrieve, maintain, reflect (extract / promote).
-- **Adapters** are how a host uses memory: **hooks**, **plugin**, **MCP**. `knowcards install` wires hooks only.
-
-Only **L1** (knowledge cards) is in code today.
-
-```
-                 ▲
-                /L3\     weights
-               /----\
-              /  L2  \   compiled: procedural skill · wiki · graph
-             /--------\
-            /    L1    \ atomic units (knowledge cards)
-           /------------\
-          /      L0      \ chats (host sessions; we do not store these)
-         ----------------
-```
-
-**Reflect** extracts from the layer below and writes the layer above:
-
-1. **Reflect to build cards** (v0) — the live chat is the source. Stop continues the session with a reflect prompt. The agent **ingests** cards via `propose`.
-2. **Reflect to build a procedural skill** (later) — cards that describe a repeat procedure compile into an L2 skill.
-
-**Ingest** is how you store a unit at the current layer (`propose` today). **Init** is a first fill for a new repo (for example, onboard and build a first wiki). Init is not wired; `propose` still creates card dirs. The CLI `init` command is hidden.
-
-### Code layout
-
-- `src/core/` and `src/lifecycle/` — memory (cards, retrieve, ingest, reflect prompt)
-- `src/adapters/` — host hook envelopes (Claude Code / Cursor / Codex)
+- `src/core/` and `src/lifecycle/` — memory
+- `src/adapters/` — host hook envelopes
 - `src/mcp/` and `src/cli/` — memory API; `install` is adapter wiring
-
----
-
-## Benchmarks
-
-On Continual Learning Bench, knowledge cards beat ICL, ACE, and Mem0 in early matched runs ([PR](https://github.com/pgasawa/continual-learning-bench/pull/11)).
-
-Harbor A/B uses four [SWE-bench Verified](https://www.swebench.com/) instances (pytest, requests, pylint, sphinx) with the official Harbor tests and oracle. See [`eval/README.md`](eval/README.md).
-
-Harbor evals are the primary product judge for this slice (manual; not CI).
 
 ---
 
@@ -168,7 +116,7 @@ Harbor evals are the primary product judge for this slice (manual; not CI).
 | Document                         | Contents                                      |
 | -------------------------------- | --------------------------------------------- |
 | [`CONTRIBUTING.md`](CONTRIBUTING.md) | Setup, Harbor evals, how to contribute     |
-| [`ROADMAP.md`](ROADMAP.md)       | Testable knobs and A/B hypotheses             |
+| [`SECURITY.md`](SECURITY.md)     | How to report a vulnerability                 |
 | [`AGENTS.md`](AGENTS.md)         | Conventions for agents working in this repo   |
 | [`eval/README.md`](eval/README.md) | Harbor A/B (bare Pi vs skill + CLI) |
 | [`skills/knowcards/SKILL.md`](skills/knowcards/SKILL.md) | Agent skill: when to query / propose |
