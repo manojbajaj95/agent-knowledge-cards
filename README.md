@@ -103,9 +103,39 @@ Do not propose plans or unverified guesses. Near-duplicates are fine; bookkeepin
 
 ## How it works
 
+A typical ReAct agent takes a user query, then reasons and acts in a loop, then gives a final answer. It does not read or write durable memory.
+
+```mermaid
+flowchart TB
+  Q[User query] --> R[Reason]
+  R -->|act| A[Act]
+  A -->|observation| R
+  R -->|done| F[Final answer]
 ```
-first prompt → retrieve → inject
-session stop → reflect follow-up → agent proposes cards
+
+Knowcards wraps that loop. After the user query, `fetch` asks memory for relevant chunks through `retrieve`. After the final answer, `reflect` writes new facts through `inject`. Memory is a black box in this view.
+
+```mermaid
+flowchart LR
+  subgraph H["Harness loop"]
+    direction TB
+    HQ[User query] --> HF[fetch]
+    HF --> HR[Reason]
+    HR -->|act| HA[Act]
+    HA -->|observation| HR
+    HR -->|done| HFA[Final answer]
+    HFA --> HREF[reflect]
+  end
+
+  subgraph M["Memory (black box)"]
+    direction TB
+    MR[retrieve]
+    MI[inject]
+  end
+
+  HF -->|ask| MR
+  MR -->|relevant chunks| HF
+  HREF -->|new facts| MI
 ```
 
 The `install` command wires Claude Code, Codex, or Cursor hooks. A prompt retrieves matching cards (MiniSearch) and injects titles. Use `query` or MCP for the full text. Stop continues the same session so the agent can propose. Cards are markdown under `.agents/knowledge_cards`. Knowcards does not bundle an LLM.
