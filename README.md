@@ -6,9 +6,12 @@
 > — Tom Mitchell
 
 > **Alpha** — this package is early. The API and host hook shapes may change.
+>
+> [Star this repo](https://github.com/manojbajaj95/agent-knowledge-cards) to stay in the loop as we ship.
 
 [![npm version](https://img.shields.io/npm/v/knowcards?style=flat-square)](https://www.npmjs.com/package/knowcards)
 [![npm](https://img.shields.io/npm/dm/knowcards?style=flat-square&logo=npm)](https://www.npmjs.com/package/knowcards)
+[![GitHub stars](https://img.shields.io/github/stars/manojbajaj95/agent-knowledge-cards?style=flat-square)](https://github.com/manojbajaj95/agent-knowledge-cards)
 [![Node](https://img.shields.io/badge/node-%3E%3D20-brightgreen?style=flat-square)](https://nodejs.org/)
 [![Claude Code](https://img.shields.io/badge/Claude%20Code-hooks-191919?style=flat-square)](https://code.claude.com/docs/en/hooks)
 [![Codex](https://img.shields.io/badge/Codex-hooks-412991?style=flat-square)](https://developers.openai.com/codex/hooks)
