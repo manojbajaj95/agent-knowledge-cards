@@ -63,7 +63,8 @@
     "format": "biome format --write .",
     "eval:prepare": "bun run eval/prepare.ts",
     "eval:compare": "bun run eval/compare.ts",
-    "eval:run": "bun run eval/run.ts"
+    "eval:run": "bun run eval/run.ts",
+    "generate-release-notes": "bun run scripts/generate-release-notes.ts"
   },
   "devDependencies": {
     "@biomejs/biome": "^2.5.7",

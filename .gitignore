@@ -4,6 +4,7 @@ node_modules
 # local notebooks / runtime
 .agents/knowledge_cards/
 .knowledge-cards/
+ROADMAP.md
 
 # Harbor eval job outputs
 eval/jobs/

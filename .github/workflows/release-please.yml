@@ -20,8 +20,8 @@ jobs:
       - uses: googleapis/release-please-action@v5
         id: release
         with:
-          config-file: release-please-config.json
-          manifest-file: .release-please-manifest.json
+          config-file: .github/release-please-config.json
+          manifest-file: .github/release-please-manifest.json
 
   publish:
     needs: release-please
@@ -49,9 +49,62 @@ jobs:
           registry-url: "https://registry.npmjs.org"
           package-manager-cache: false
 
+      - name: Generate enhanced release notes
+        if: ${{ needs.release-please.outputs.release_created }}
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+          OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+          OPENAI_RELEASE_NOTES_MODEL: ${{ vars.OPENAI_RELEASE_NOTES_MODEL }}
+        run: |
+          set -euo pipefail
+          npm --silent run generate-release-notes -- "${{ needs.release-please.outputs.tag_name }}" > "$RUNNER_TEMP/release-notes.md"
+          test -s "$RUNNER_TEMP/release-notes.md"
+          release_title="$(sed -n 's/^# //p' "$RUNNER_TEMP/release-notes.md" | head -n 1)"
+          release_body_file="$RUNNER_TEMP/release-notes.md"
+          release_edit_args=()
+          if [ -n "$release_title" ]; then
+            release_body_file="$RUNNER_TEMP/release-body.md"
+            tail -n +2 "$RUNNER_TEMP/release-notes.md" | sed '1{/^$/d;}' > "$release_body_file"
+            release_edit_args+=(--title "$release_title")
+          fi
+          release_edit_args+=(--notes-file "$release_body_file")
+          gh release edit "${{ needs.release-please.outputs.tag_name }}" "${release_edit_args[@]}"
+          echo "Enhanced release notes were applied."
+
       # Trusted publishing (OIDC). Configure on npmjs.com → package → Trusted Publisher:
       #   Organization or user: manojbajaj95
       #   Package: knowcards  (GitHub repo: agent-knowledge-cards)
       #   Workflow filename: release-please.yml
       - name: Publish to npm
         run: npm publish --access public
+
+      - name: Update changelog with enhanced release notes
+        if: ${{ needs.release-please.outputs.release_created }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          if [ -s "$RUNNER_TEMP/release-notes.md" ]; then
+            if npm --silent run generate-release-notes -- --update-changelog "${{ needs.release-please.outputs.tag_name }}" "$RUNNER_TEMP/release-notes.md"; then
+              if git diff --quiet -- CHANGELOG.md; then
+                echo "CHANGELOG.md already matched enhanced release notes."
+              else
+                git config user.name "github-actions[bot]"
+                git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+                git add CHANGELOG.md
+                if git commit -m "docs: update changelog for ${{ needs.release-please.outputs.tag_name }}"; then
+                  if git push origin "HEAD:${{ github.ref_name }}"; then
+                    echo "CHANGELOG.md was updated with enhanced release notes."
+                  else
+                    echo "::warning::CHANGELOG.md update could not be pushed."
+                  fi
+                else
+                  echo "::warning::CHANGELOG.md update could not be committed."
+                fi
+              fi
+            else
+              echo "::warning::CHANGELOG.md could not be updated with enhanced release notes."
+            fi
+          else
+            echo "Enhanced release notes were not generated; leaving CHANGELOG.md unchanged."
+          fi
