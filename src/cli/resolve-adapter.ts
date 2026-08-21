@@ -7,22 +7,22 @@ import { dirname, join, relative, sep } from "node:path";
 import { fileURLToPath } from "node:url";
 
 export type HostId = "claude-code" | "cursor" | "codex" | "pi";
-export type AdapterAction = "inject" | "reflect";
+export type AdapterAction = "fetch" | "reflect";
 
 const ADAPTER_STEM: Record<
   Exclude<HostId, "pi">,
   Record<AdapterAction, string>
 > = {
   "claude-code": {
-    inject: "claude-code-inject",
+    fetch: "claude-code-fetch",
     reflect: "claude-code-reflect",
   },
   cursor: {
-    inject: "cursor-inject",
+    fetch: "cursor-fetch",
     reflect: "cursor-reflect",
   },
   codex: {
-    inject: "codex-inject",
+    fetch: "codex-fetch",
     reflect: "codex-reflect",
   },
 };

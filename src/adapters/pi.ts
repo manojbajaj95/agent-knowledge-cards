@@ -1,15 +1,12 @@
 /**
- * Pi extension: fetch (inject titles) after the user query, reflect after the
+ * Pi extension: fetch (titles) after the user query, reflect after the
  * final answer — same harness loop as the README diagram.
  *
  * `agent_end` + `deliverAs: "followUp"` continues the current `session.prompt()`
  * so Harbor `pi --print --mode json` still runs the reflect turn.
  */
-import {
-  onSessionPrompt,
-  onSessionStop,
-  REFLECT_FOLLOWUP_TITLE,
-} from "../lifecycle/session.ts";
+import { fetchCards } from "../harness/fetch.ts";
+import { REFLECT_FOLLOWUP_TITLE, reflectFollowup } from "../harness/reflect.ts";
 
 const MUTATION_TOOLS = new Set(["write", "edit"]);
 
@@ -81,10 +78,12 @@ export default function knowcardsPi(pi: PiExtensionApi): void {
       const prompt = event.prompt ?? "";
       if (isKnowcardsReflectPrompt(prompt)) return;
       didReflect = false;
-      const inject = await onSessionPrompt(prompt, { cwd: ctx.cwd });
-      if (!inject.text) return;
+      const fetched = await fetchCards(prompt, { cwd: ctx.cwd });
+      if (!fetched.text) return;
       const base = event.systemPrompt ?? "";
-      return { systemPrompt: base ? `${base}\n\n${inject.text}` : inject.text };
+      return {
+        systemPrompt: base ? `${base}\n\n${fetched.text}` : fetched.text,
+      };
     } catch {
       return undefined;
     }
@@ -99,7 +98,7 @@ export default function knowcardsPi(pi: PiExtensionApi): void {
       if (didReflect || !sawMutation) return;
       const stop = lastAssistant(raw as AgentEndEvent)?.stopReason;
       if (stop === "error" || stop === "aborted") return;
-      const followup = await onSessionStop(undefined, { cwd: ctx.cwd });
+      const followup = await reflectFollowup(undefined, { cwd: ctx.cwd });
       if (!followup) return;
       didReflect = true;
       sawMutation = false;

@@ -10,13 +10,15 @@ import {
 
 type JsonObject = Record<string, unknown>;
 
+const CURSOR_CONTEXT_RULE = ".cursor/rules/knowcards-context.mdc";
+
 function isKnowcardsCommand(command: string | undefined): boolean {
   if (!command) return false;
   return (
     command.includes("knowcards") ||
-    /claude-code-(inject|reflect)/.test(command) ||
-    /cursor-(inject|reflect)/.test(command) ||
-    /codex-(inject|reflect)/.test(command)
+    /claude-code-(fetch|inject|reflect)/.test(command) ||
+    /cursor-(fetch|inject|reflect)/.test(command) ||
+    /codex-(fetch|inject|reflect)/.test(command)
   );
 }
 
@@ -36,6 +38,25 @@ async function readJsonFile(path: string): Promise<JsonObject> {
 async function writeJsonFile(path: string, value: unknown): Promise<void> {
   await mkdir(dirname(path), { recursive: true });
   await writeFile(path, `${JSON.stringify(value, null, 2)}\n`, "utf8");
+}
+
+/** Append a gitignore line if missing (exact path match). */
+async function ensureGitignoreLine(
+  cwd: string,
+  line: string,
+): Promise<string | null> {
+  const path = join(cwd, ".gitignore");
+  let text = "";
+  try {
+    text = await readFile(path, "utf8");
+  } catch {
+    // create new
+  }
+  const lines = text.split(/\r?\n/);
+  if (lines.some((l) => l.trim() === line)) return null;
+  const next = text.endsWith("\n") || text === "" ? text : `${text}\n`;
+  await writeFile(path, `${next}${line}\n`, "utf8");
+  return path;
 }
 
 /** Claude Code / Codex nested hook list shape. */
@@ -62,9 +83,7 @@ function mergeNestedCommandHooks(
       {
         type: "command",
         command,
-        timeout: action === "inject" ? 30 : 60,
-        statusMessage:
-          action === "inject" ? "Knowcards inject" : "Knowcards reflect",
+        timeout: action === "fetch" ? 30 : 60,
         ...extra,
       },
     ],
@@ -97,8 +116,8 @@ async function installClaudeCode(cwd: string): Promise<string[]> {
 
   hooks.UserPromptSubmit = mergeNestedCommandHooks(
     hooks.UserPromptSubmit,
-    adapterCommand("claude-code", "inject"),
-    "inject",
+    adapterCommand("claude-code", "fetch"),
+    "fetch",
   );
   hooks.Stop = mergeNestedCommandHooks(
     hooks.Stop,
@@ -119,7 +138,7 @@ async function installCursor(cwd: string): Promise<string[]> {
 
   hooks.beforeSubmitPrompt = mergeCursorHooks(
     hooks.beforeSubmitPrompt,
-    adapterCommand("cursor", "inject"),
+    adapterCommand("cursor", "fetch"),
   );
   hooks.stop = mergeCursorHooks(
     hooks.stop,
@@ -130,7 +149,10 @@ async function installCursor(cwd: string): Promise<string[]> {
   config.version = config.version ?? 1;
   config.hooks = hooks;
   await writeJsonFile(hooksPath, config);
-  return [hooksPath];
+  const files = [hooksPath];
+  const gitignore = await ensureGitignoreLine(cwd, CURSOR_CONTEXT_RULE);
+  if (gitignore) files.push(gitignore);
+  return files;
 }
 
 async function installCodex(cwd: string): Promise<string[]> {
@@ -140,8 +162,8 @@ async function installCodex(cwd: string): Promise<string[]> {
 
   hooks.UserPromptSubmit = mergeNestedCommandHooks(
     hooks.UserPromptSubmit,
-    adapterCommand("codex", "inject"),
-    "inject",
+    adapterCommand("codex", "fetch"),
+    "fetch",
   );
   hooks.Stop = mergeNestedCommandHooks(
     hooks.Stop,
@@ -150,7 +172,7 @@ async function installCodex(cwd: string): Promise<string[]> {
   );
 
   if (typeof config.description !== "string") {
-    config.description = "Knowcards session inject + reflect";
+    config.description = "Knowcards session fetch + reflect";
   }
   config.hooks = hooks;
   await writeJsonFile(hooksPath, config);
@@ -197,10 +219,13 @@ export async function installHost(
       files = await installCursor(cwd);
       notes.push("Merged beforeSubmitPrompt + stop into .cursor/hooks.json");
       notes.push(
-        "Inject writes .cursor/rules/knowcards-context.mdc (Cursor hooks cannot inject context)",
+        `Fetch writes ${CURSOR_CONTEXT_RULE} (Cursor hooks cannot inject context)`,
       );
       notes.push(
-        "Short follow-ups (< 3 words) skip rewrite so the last inject stays",
+        `Appended ${CURSOR_CONTEXT_RULE} to .gitignore if missing (hooks.json stays commitable)`,
+      );
+      notes.push(
+        "Empty fetch unlinks the context rule; short follow-ups (< 3 words) skip rewrite",
       );
       notes.push(
         "Stop followup_message is a user message (host limit; no background wake)",
@@ -228,7 +253,7 @@ export async function installHost(
         );
       }
       notes.push(
-        "Inject appends titles to the system prompt on before_agent_start",
+        "Fetch appends titles to the system prompt on before_agent_start",
       );
       notes.push(
         "Reflect follow-up runs on agent_end after write/edit (after the final answer)",

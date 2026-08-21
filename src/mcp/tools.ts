@@ -1,15 +1,11 @@
-import { deleteCard, proposeCard, updateCard } from "../core/ingestion.ts";
-import { queryLibrary } from "../core/retrieval.ts";
 import {
-  FsCardStorage,
-  openLibrary,
-  requireNotebook,
-} from "../core/storage.ts";
-import {
-  allCards,
-  DEFAULT_CARDS_ROOT,
-  DEFAULT_NOTEBOOK_ID,
-} from "../core/types/index.ts";
+  deleteCardOp,
+  initCards,
+  proposeCardOp,
+  queryCardsOp,
+  statusCards,
+  updateCardOp,
+} from "../memory/ops.ts";
 
 export type ToolTextResult = {
   content: Array<{ type: "text"; text: string }>;
@@ -38,25 +34,22 @@ function fail(message: string): ToolTextResult {
 export async function toolInit(args: {
   root?: string;
 }): Promise<ToolTextResult> {
-  const root = args.root ?? DEFAULT_CARDS_ROOT;
-  const storage = new FsCardStorage(root);
-  await storage.init();
-  return ok({ root, notebook: DEFAULT_NOTEBOOK_ID, initialized: true });
+  try {
+    return ok(await initCards(args.root));
+  } catch (err) {
+    return fail(err instanceof Error ? err.message : String(err));
+  }
 }
 
 /** Status: notebooks and card counts (loads library into memory). */
 export async function toolStatus(args: {
   root?: string;
 }): Promise<ToolTextResult> {
-  const { library } = await openLibrary(args.root ?? DEFAULT_CARDS_ROOT);
-  return ok({
-    root: library.root,
-    notebooks: library.notebooks.map((n) => ({
-      id: n.id,
-      count: n.cards.length,
-    })),
-    totalCards: allCards(library).length,
-  });
+  try {
+    return ok(await statusCards(args.root));
+  } catch (err) {
+    return fail(err instanceof Error ? err.message : String(err));
+  }
 }
 
 /** Query cards with MiniSearch BM25+ (empty q = all). */
@@ -65,9 +58,15 @@ export async function toolQuery(args: {
   root?: string;
   notebook?: string;
 }): Promise<ToolTextResult> {
-  const { library } = await openLibrary(args.root ?? DEFAULT_CARDS_ROOT);
-  const cards = queryLibrary(library, args.q ?? "", args.notebook);
-  return ok(cards);
+  try {
+    const cards = await queryCardsOp(args.q ?? "", {
+      root: args.root,
+      notebook: args.notebook,
+    });
+    return ok(cards);
+  } catch (err) {
+    return fail(err instanceof Error ? err.message : String(err));
+  }
 }
 
 /** Propose a card (title required; writes markdown under the notebook). */
@@ -78,18 +77,14 @@ export async function toolPropose(args: {
   notebook?: string;
   root?: string;
 }): Promise<ToolTextResult> {
-  const root = args.root ?? DEFAULT_CARDS_ROOT;
-  const notebookId = args.notebook ?? DEFAULT_NOTEBOOK_ID;
-  const { storage, library } = await openLibrary(root);
-  // writeCard mkdir -p; no explicit init required
   try {
-    const nb = requireNotebook(library, notebookId);
-    const { card } = proposeCard(nb, {
+    const card = await proposeCardOp({
       title: args.title,
       body: args.body,
       useWhen: args.useWhen,
+      notebook: args.notebook,
+      root: args.root,
     });
-    await storage.writeCard(notebookId, card);
     return ok(card);
   } catch (err) {
     return fail(err instanceof Error ? err.message : String(err));
@@ -105,20 +100,14 @@ export async function toolUpdate(args: {
   notebook?: string;
   root?: string;
 }): Promise<ToolTextResult> {
-  const root = args.root ?? DEFAULT_CARDS_ROOT;
-  const notebookId = args.notebook ?? DEFAULT_NOTEBOOK_ID;
-  const { storage, library } = await openLibrary(root);
   try {
-    const nb = requireNotebook(library, notebookId);
-    const { card, previousSlug } = updateCard(nb, args.idOrSlug, {
+    const card = await updateCardOp(args.idOrSlug, {
       title: args.title,
       body: args.body,
       useWhen: args.useWhen,
+      notebook: args.notebook,
+      root: args.root,
     });
-    await storage.writeCard(notebookId, card);
-    if (previousSlug !== card.slug) {
-      await storage.deleteCard(notebookId, previousSlug);
-    }
     return ok(card);
   } catch (err) {
     return fail(err instanceof Error ? err.message : String(err));
@@ -131,14 +120,13 @@ export async function toolDelete(args: {
   notebook?: string;
   root?: string;
 }): Promise<ToolTextResult> {
-  const root = args.root ?? DEFAULT_CARDS_ROOT;
-  const notebookId = args.notebook ?? DEFAULT_NOTEBOOK_ID;
-  const { storage, library } = await openLibrary(root);
   try {
-    const nb = requireNotebook(library, notebookId);
-    const { card } = deleteCard(nb, args.idOrSlug);
-    await storage.deleteCard(notebookId, card.slug);
-    return ok({ deleted: true, card });
+    return ok(
+      await deleteCardOp(args.idOrSlug, {
+        notebook: args.notebook,
+        root: args.root,
+      }),
+    );
   } catch (err) {
     return fail(err instanceof Error ? err.message : String(err));
   }

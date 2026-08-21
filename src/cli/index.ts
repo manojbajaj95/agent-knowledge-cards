@@ -1,22 +1,28 @@
 #!/usr/bin/env node
 import { createRequire } from "node:module";
 import { Command } from "commander";
-import { deleteCard, proposeCard, updateCard } from "../core/ingestion.ts";
-import { queryLibrary } from "../core/retrieval.ts";
 import {
-  FsCardStorage,
-  openLibrary,
-  requireNotebook,
-} from "../core/storage.ts";
+  deleteCardOp,
+  initCards,
+  proposeCardOp,
+  queryCardsOp,
+  statusCards,
+  updateCardOp,
+} from "../memory/ops.ts";
 import {
-  allCards,
   DEFAULT_CARDS_ROOT,
   DEFAULT_NOTEBOOK_ID,
-} from "../core/types/index.ts";
+} from "../memory/types/index.ts";
 
 const pkg = createRequire(import.meta.url)("../../package.json") as {
   version: string;
 };
+
+function fail(err: unknown): never {
+  const message = err instanceof Error ? err.message : String(err);
+  console.log(JSON.stringify({ error: message }, null, 2));
+  process.exit(1);
+}
 
 const program = new Command();
 
@@ -34,15 +40,11 @@ program
   )
   .action(async (_opts, cmd) => {
     const { root } = cmd.optsWithGlobals() as { root: string };
-    const storage = new FsCardStorage(root);
-    await storage.init();
-    console.log(
-      JSON.stringify(
-        { root, notebook: DEFAULT_NOTEBOOK_ID, initialized: true },
-        null,
-        2,
-      ),
-    );
+    try {
+      console.log(JSON.stringify(await initCards(root), null, 2));
+    } catch (err) {
+      fail(err);
+    }
   });
 
 program
@@ -50,21 +52,11 @@ program
   .description("show notebooks and card counts (loads library into memory)")
   .action(async (_opts, cmd) => {
     const { root } = cmd.optsWithGlobals() as { root: string };
-    const { library } = await openLibrary(root);
-    console.log(
-      JSON.stringify(
-        {
-          root: library.root,
-          notebooks: library.notebooks.map((n) => ({
-            id: n.id,
-            count: n.cards.length,
-          })),
-          totalCards: allCards(library).length,
-        },
-        null,
-        2,
-      ),
-    );
+    try {
+      console.log(JSON.stringify(await statusCards(root), null, 2));
+    } catch (err) {
+      fail(err);
+    }
   });
 
 program
@@ -74,9 +66,12 @@ program
   .option("--notebook <id>", "limit to one notebook")
   .action(async (q: string, opts: { notebook?: string }, cmd) => {
     const { root } = cmd.optsWithGlobals() as { root: string };
-    const { library } = await openLibrary(root);
-    const cards = queryLibrary(library, q, opts.notebook);
-    console.log(JSON.stringify(cards, null, 2));
+    try {
+      const cards = await queryCardsOp(q, { root, notebook: opts.notebook });
+      console.log(JSON.stringify(cards, null, 2));
+    } catch (err) {
+      fail(err);
+    }
   });
 
 program
@@ -93,17 +88,19 @@ program
       cmd,
     ) => {
       const { root } = cmd.optsWithGlobals() as { root: string };
-      const { storage, library } = await openLibrary(root);
-      // writeCard mkdir -p; no explicit init required
-      const body = bodyParts.join(" ").trim() || undefined;
-      const nb = requireNotebook(library, opts.notebook);
-      const { card } = proposeCard(nb, {
-        title: opts.title,
-        body,
-        useWhen: opts.useWhen,
-      });
-      await storage.writeCard(opts.notebook, card);
-      console.log(JSON.stringify(card, null, 2));
+      try {
+        const body = bodyParts.join(" ").trim() || undefined;
+        const card = await proposeCardOp({
+          title: opts.title,
+          body,
+          useWhen: opts.useWhen,
+          notebook: opts.notebook,
+          root,
+        });
+        console.log(JSON.stringify(card, null, 2));
+      } catch (err) {
+        fail(err);
+      }
     },
   );
 
@@ -127,19 +124,19 @@ program
       cmd,
     ) => {
       const { root } = cmd.optsWithGlobals() as { root: string };
-      const { storage, library } = await openLibrary(root);
-      const nb = requireNotebook(library, opts.notebook);
-      const body = bodyParts.join(" ").trim();
-      const { card, previousSlug } = updateCard(nb, idOrSlug, {
-        title: opts.title,
-        body: body || undefined,
-        useWhen: opts.useWhen === undefined ? undefined : opts.useWhen,
-      });
-      await storage.writeCard(opts.notebook, card);
-      if (previousSlug !== card.slug) {
-        await storage.deleteCard(opts.notebook, previousSlug);
+      try {
+        const body = bodyParts.join(" ").trim();
+        const card = await updateCardOp(idOrSlug, {
+          title: opts.title,
+          body: body || undefined,
+          useWhen: opts.useWhen === undefined ? undefined : opts.useWhen,
+          notebook: opts.notebook,
+          root,
+        });
+        console.log(JSON.stringify(card, null, 2));
+      } catch (err) {
+        fail(err);
       }
-      console.log(JSON.stringify(card, null, 2));
     },
   );
 
@@ -150,11 +147,15 @@ program
   .option("--notebook <id>", "notebook id", DEFAULT_NOTEBOOK_ID)
   .action(async (idOrSlug: string, opts: { notebook: string }, cmd) => {
     const { root } = cmd.optsWithGlobals() as { root: string };
-    const { storage, library } = await openLibrary(root);
-    const nb = requireNotebook(library, opts.notebook);
-    const { card } = deleteCard(nb, idOrSlug);
-    await storage.deleteCard(opts.notebook, card.slug);
-    console.log(JSON.stringify({ deleted: true, card }, null, 2));
+    try {
+      const result = await deleteCardOp(idOrSlug, {
+        notebook: opts.notebook,
+        root,
+      });
+      console.log(JSON.stringify(result, null, 2));
+    } catch (err) {
+      fail(err);
+    }
   });
 
 program
@@ -186,21 +187,25 @@ program
       process.exitCode = 1;
       return;
     }
-    const { installHost } = await import("./install.ts");
-    const result = await installHost(host, process.cwd(), {
-      global: opts.global,
-    });
-    console.log(
-      JSON.stringify(
-        {
-          installed: result.host,
-          files: result.files,
-          notes: result.notes,
-        },
-        null,
-        2,
-      ),
-    );
+    try {
+      const { installHost } = await import("./install.ts");
+      const result = await installHost(host, process.cwd(), {
+        global: opts.global,
+      });
+      console.log(
+        JSON.stringify(
+          {
+            installed: result.host,
+            files: result.files,
+            notes: result.notes,
+          },
+          null,
+          2,
+        ),
+      );
+    } catch (err) {
+      fail(err);
+    }
   });
 
 program

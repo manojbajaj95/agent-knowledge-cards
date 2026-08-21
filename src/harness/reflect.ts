@@ -4,7 +4,7 @@ import { fileURLToPath } from "node:url";
 
 const OVERRIDE_FILENAME = "REFLECT.md";
 
-/** First line of the Stop follow-up. Hosts skip inject when the prompt is this turn. */
+/** First line of the Stop follow-up. Hosts skip fetch when the prompt is this turn. */
 export const REFLECT_FOLLOWUP_TITLE =
   "KNOWLEDGE CARDS — end-of-session reflection";
 
@@ -55,4 +55,25 @@ export function formatReflectFollowup(reflectPrompt: string): string {
     reflectPrompt.trim(),
     "--- end guidance ---",
   ].join("\n");
+}
+
+export type ReflectFollowupOptions = {
+  /** Project cwd — used to load `REFLECT.md` override. */
+  cwd?: string;
+  root?: string;
+};
+
+/**
+ * Return the reflection follow-up for the primary agent.
+ * Does not call an LLM or write cards.
+ */
+export async function reflectFollowup(
+  _episodeText?: string,
+  rootOrOptions: string | ReflectFollowupOptions = {},
+): Promise<string> {
+  const options: ReflectFollowupOptions =
+    typeof rootOrOptions === "string" ? { root: rootOrOptions } : rootOrOptions;
+  const cwd = options.cwd ?? process.cwd();
+  const prompt = await loadReflectPrompt(cwd);
+  return formatReflectFollowup(prompt);
 }

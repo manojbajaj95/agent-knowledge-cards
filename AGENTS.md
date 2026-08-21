@@ -10,15 +10,15 @@ Conventions for agents working in this repo.
 
 ## Layout
 
-Two boxes: **memory** (units, ingest, retrieve, reflect) and **adapters** (how a host uses memory).
+Two boxes: **memory** (save, store, retrieve) and **harness** (fetch + reflect). Adapters wrap host envelopes only.
 
-- `src/core/` — L1 memory internals (ingest, retrieve, inject wording, reflect prompts) + abstract storage. Host-agnostic.
-- `src/lifecycle/` — session retrieve + reflect follow-up strings. Memory, not a host SDK.
+- `src/memory/` — L1 card internals (ingest, retrieve, storage, markdown) + persist ops (`ops.ts`). Host-agnostic.
+- `src/harness/` — session fetch (`fetchCards`) + reflect follow-up (`reflectFollowup`, REFLECT.md). Not a host SDK.
 - `src/cli/` — thin CLI over memory (`status`, `query`, `propose`, `update`, `delete`, `mcp`) plus `install` (adapter wiring). `init` is hidden; propose creates dirs.
-- `src/adapters/` — host hook envelopes (Claude Code / Cursor / Codex) and the Pi extension. Do not import `src/core`.
+- `src/adapters/` — host hook envelopes (Claude Code / Cursor / Codex) and the Pi extension. Do not import `src/memory`.
 - `src/mcp/` — MCP stdio server (`@modelcontextprotocol/sdk`); tool logic in `tools.ts`.
 - `eval/` — Harbor A/B with/without knowcards (`eval:prepare` / `eval:run` / `eval:compare`). **Primary validation** for this slice (manual; not CI). Sequential same-repo runs are named only.
-- `tests/eval.test.ts` — offline checks for the eval pipeline (prepare / metrics / compare). No separate unit-test suite.
+- `tests/` — offline checks for retrieve/fetch and the eval pipeline. No separate unit-test suite beyond that.
 - `dist/` — build output for npm / `npx` (do not edit; emit with `bun run build`).
 
 ## On-disk cards
@@ -46,13 +46,13 @@ Use **bun** for local scripts (`bun test`, `bun run …`). The published package
 
 ## Rules
 
-1. Keep core free of MCP SDK and Cursor APIs. Storage I/O lives behind `CardStorage`.
-2. Lifecycle and MCP wrap core; adapters wrap host envelopes only. Do not import `src/core` from `src/adapters`. Inject *wording* in `src/core/inject.ts` is fine; Cursor/MCP SDKs are not.
-3. Do not add vectors, graphs, or hybrid search to core without discussion. See [ROADMAP.md](ROADMAP.md).
+1. Keep memory free of MCP SDK and Cursor APIs. Storage I/O lives behind `CardStorage`. Persist workflows live in `src/memory/ops.ts`.
+2. Harness and MCP wrap memory; adapters wrap host envelopes only. Do not import `src/memory` from `src/adapters`. Fetch wording lives in `src/harness/fetch.ts`; Cursor/MCP SDKs do not.
+3. Do not add vectors, graphs, or hybrid search to memory without discussion.
 4. Prefer the smallest change that makes the feature exist; polish later.
 5. Conventional Commits for git messages (`feat:`, `fix:`, `chore:`, …) — Release Please drives versions from these.
 6. **Rely on Harbor evals** to judge product changes in this slice (with/without knowcards A/B on pinned Pi). Do not grow a parallel unit-test suite unless needed for eval tooling. Do not add Harbor to CI.
 
 ## Design ancestor
 
-CL bench `knowledge_cards`: act during an instance, reflect at end, inject cards as trusted memory. This library generalizes that into reusable functions + lifecycle/MCP host edges.
+CL bench `knowledge_cards`: act during an instance, reflect at end, fetch cards as trusted memory. This library generalizes that into reusable functions + harness/MCP host edges.

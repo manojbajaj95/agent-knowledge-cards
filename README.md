@@ -1,6 +1,6 @@
 # Knowcards
 
-### Local-first durable facts for coding agents, reinjected as trusted memory
+### Local-first durable facts for coding agents, fetched as trusted memory
 
 > "A computer program is said to learn from experience E with respect to some class of tasks T and performance measure P, if its performance at tasks in T, as measured by P, improves with experience E."
 > — Tom Mitchell
@@ -24,7 +24,7 @@
 
 ## Highlights
 
-> **Knowcards = project-local markdown facts + automatic inject/reflect on supported hosts.**
+> **Knowcards = project-local markdown facts + automatic fetch/reflect on supported hosts.**
 >
 > - **Filesystem-first** — cards are plain markdown under `.agents/knowledge_cards`. No DB, no vectors.
 > - **Trusted memory** — hits are preferred over rediscovery or a conflicting README unless the card is stale.
@@ -32,14 +32,14 @@
 
 Coding agents forget between sessions. They re-grep the tree, re-read the README, and still miss the constraint that mattered last time. That wastes tokens and wall clock — and fails when the workspace is wrong.
 
-Knowcards keeps those facts as local cards and reinjects them. The agent prefers the card unless new evidence shows it is wrong.
+Knowcards keeps those facts as local cards and fetches them again. The agent prefers the card unless new evidence shows it is wrong.
 
 ---
 
 ## Quick start
 
 ```bash
-# Install automatic inject + reflect hooks (pick your host)
+# Install automatic fetch + reflect hooks (pick your host)
 npx knowcards install cursor
 npx knowcards install claude-code
 npx knowcards install codex
@@ -95,7 +95,7 @@ Install the [knowcards skill](skills/knowcards/SKILL.md) (or equivalent host ins
 
 ## Agent protocol
 
-With hooks installed, inject and end-of-session reflect run automatically. The manual loop still works:
+With hooks installed, fetch and end-of-session reflect run automatically. The manual loop still works:
 
 1. **Before acting** — `npx knowcards query "<keywords>"` (or the MCP tool). Skip only for routine edits in code you already hold.
 2. **Apply hits** — Prefer card facts. Verify against the repo when a card may be old.
@@ -117,7 +117,7 @@ flowchart TB
   R -->|done| F[Final answer]
 ```
 
-Knowcards wraps that loop. After the user query, `fetch` asks memory for relevant chunks through `retrieve`. After the final answer, `reflect` writes new facts through `inject`. Memory is a black box in this view.
+Knowcards wraps that loop. After the user query, `fetch` asks memory for relevant chunks through `retrieve`. After the final answer, `reflect` writes new facts through `save`. Memory is a black box in this view.
 
 ```mermaid
 flowchart LR
@@ -134,20 +134,20 @@ flowchart LR
   subgraph M["Memory (black box)"]
     direction TB
     MR[retrieve]
-    MI[inject]
+    MS[save]
   end
 
   HF -->|ask| MR
   MR -->|relevant chunks| HF
-  HREF -->|new facts| MI
+  HREF -->|new facts| MS
 ```
 
-The `install` command wires Claude Code, Codex, or Cursor hooks, or a Pi extension. A prompt retrieves matching cards (MiniSearch) and injects titles. Use `query` or MCP for the full text. After the final answer, Stop (or Pi `agent_end`) continues the same session so the agent can propose. Cards are markdown under `.agents/knowledge_cards`. Knowcards does not bundle an LLM.
+The `install` command wires Claude Code, Codex, or Cursor hooks, or a Pi extension. A prompt retrieves matching cards (MiniSearch) and fetches titles into context. Use `query` or MCP for the full text. After the final answer, Stop (or Pi `agent_end`) continues the same session so the agent can propose. Cards are markdown under `.agents/knowledge_cards`. Knowcards does not bundle an LLM.
 
-- `src/core/` and `src/lifecycle/` — memory
+- `src/memory/` — save, store, retrieve
+- `src/harness/` — fetch + reflect
 - `src/adapters/` — host hook envelopes
 - `src/mcp/` and `src/cli/` — memory API; `install` is adapter wiring
-
 ---
 
 ## Docs

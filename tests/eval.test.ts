@@ -8,8 +8,8 @@ import {
   metricsFromTrial,
 } from "../eval/metrics.ts";
 import { loadTemplateCards, prepareHarborDataset } from "../eval/prepare.ts";
-import { openLibrary } from "../src/core/storage.ts";
-import { allCards } from "../src/core/types/index.ts";
+import { openLibrary } from "../src/memory/storage.ts";
+import { allCards } from "../src/memory/types/index.ts";
 
 describe("eval metrics", () => {
   test("metricsFromTrial reads cost and duration", () => {

@@ -1,12 +1,12 @@
 #!/usr/bin/env node
 /**
- * Claude Code UserPromptSubmit → additionalContext inject.
+ * Claude Code UserPromptSubmit → additionalContext fetch.
  */
-import { runAdditiveInject } from "./run.ts";
+import { runAdditiveFetch } from "./run.ts";
 
-await runAdditiveInject((inject) => ({
+await runAdditiveFetch((text) => ({
   hookSpecificOutput: {
     hookEventName: "UserPromptSubmit",
-    additionalContext: inject,
+    additionalContext: text,
   },
 }));

@@ -28,8 +28,8 @@ import {
 } from "node:fs/promises";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
-import { openLibrary } from "../src/core/storage.ts";
-import { allCards, type KnowledgeCard } from "../src/core/types/index.ts";
+import { openLibrary } from "../src/memory/storage.ts";
+import { allCards, type KnowledgeCard } from "../src/memory/types/index.ts";
 
 const EVAL_DIR = dirname(fileURLToPath(import.meta.url));
 const REPO_ROOT = dirname(EVAL_DIR);

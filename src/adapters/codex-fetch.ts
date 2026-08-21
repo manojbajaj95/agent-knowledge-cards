@@ -1,13 +1,13 @@
 #!/usr/bin/env node
 /**
- * Codex UserPromptSubmit → additionalContext inject.
+ * Codex UserPromptSubmit → additionalContext fetch.
  */
-import { runAdditiveInject } from "./run.ts";
+import { runAdditiveFetch } from "./run.ts";
 
-await runAdditiveInject((inject) => ({
+await runAdditiveFetch((text) => ({
   suppressOutput: true,
   hookSpecificOutput: {
     hookEventName: "UserPromptSubmit",
-    additionalContext: inject,
+    additionalContext: text,
   },
 }));

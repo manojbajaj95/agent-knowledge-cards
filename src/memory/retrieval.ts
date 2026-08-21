@@ -12,7 +12,7 @@ import { allCards } from "./types/index.ts";
  *
  * Persistence remains filesystem-first; the search index is built per query.
  *
- * Inject caps hits in onSessionPrompt (INJECT_CARD_CAP). CLI query is uncapped.
+ * Fetch caps hits in fetchCards (FETCH_CARD_CAP). CLI query is uncapped.
  * MiniSearch drops query stopwords and uses prefix only on short queries.
  * TODO: progressive disclosure (see roadmap L1-H4)
  * TODO: tune boosts / reuse index across queries
