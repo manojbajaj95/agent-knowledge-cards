@@ -16,12 +16,50 @@ jobs:
     outputs:
       release_created: ${{ steps.release.outputs.release_created }}
       tag_name: ${{ steps.release.outputs.tag_name }}
+      prs_created: ${{ steps.release.outputs.prs_created }}
     steps:
       - uses: googleapis/release-please-action@v5
         id: release
         with:
           config-file: .github/release-please-config.json
           manifest-file: .github/release-please-manifest.json
+
+  enhance-changelog:
+    needs: release-please
+    if: ${{ needs.release-please.outputs.prs_created == 'true' && needs.release-please.outputs.release_created != 'true' }}
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: latest
+
+      - name: Enhance CHANGELOG.md on the release PR
+        env:
+          GH_TOKEN: ${{ github.token }}
+          OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+          OPENAI_RELEASE_NOTES_MODEL: ${{ vars.OPENAI_RELEASE_NOTES_MODEL }}
+        run: |
+          set -euo pipefail
+          branch="$(gh pr list --state open --label 'autorelease: pending' --json headRefName --jq '.[0].headRefName')"
+          test -n "$branch"
+          git fetch origin "$branch"
+          git checkout -B "$branch" "origin/$branch"
+          version="$(node -p "require('./package.json').version")"
+          tag="knowcards-v${version}"
+          bun run --silent generate-release-notes -- "$tag" > "$RUNNER_TEMP/release-notes.md"
+          test -s "$RUNNER_TEMP/release-notes.md"
+          bun run --silent generate-release-notes -- --update-changelog "$tag" "$RUNNER_TEMP/release-notes.md"
+          if git diff --quiet -- CHANGELOG.md; then
+            echo "CHANGELOG.md already matched enhanced release notes."
+            exit 0
+          fi
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add CHANGELOG.md
+          git commit -m "docs: enhance changelog for ${tag}"
+          git push origin "HEAD:$branch"
 
   publish:
     needs: release-please
@@ -78,33 +116,3 @@ jobs:
       #   Workflow filename: release-please.yml
       - name: Publish to npm
         run: npm publish --access public
-
-      - name: Update changelog with enhanced release notes
-        if: ${{ needs.release-please.outputs.release_created }}
-        shell: bash
-        run: |
-          set -euo pipefail
-          if [ -s "$RUNNER_TEMP/release-notes.md" ]; then
-            if npm --silent run generate-release-notes -- --update-changelog "${{ needs.release-please.outputs.tag_name }}" "$RUNNER_TEMP/release-notes.md"; then
-              if git diff --quiet -- CHANGELOG.md; then
-                echo "CHANGELOG.md already matched enhanced release notes."
-              else
-                git config user.name "github-actions[bot]"
-                git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-                git add CHANGELOG.md
-                if git commit -m "docs: update changelog for ${{ needs.release-please.outputs.tag_name }}"; then
-                  if git push origin "HEAD:${{ github.ref_name }}"; then
-                    echo "CHANGELOG.md was updated with enhanced release notes."
-                  else
-                    echo "::warning::CHANGELOG.md update could not be pushed."
-                  fi
-                else
-                  echo "::warning::CHANGELOG.md update could not be committed."
-                fi
-              fi
-            else
-              echo "::warning::CHANGELOG.md could not be updated with enhanced release notes."
-            fi
-          else
-            echo "Enhanced release notes were not generated; leaving CHANGELOG.md unchanged."
-          fi

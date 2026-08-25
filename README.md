@@ -6,9 +6,12 @@
 > — Tom Mitchell
 
 > **Alpha** — this package is early. The API and host hook shapes may change.
+>
+> [Star this repo](https://github.com/manojbajaj95/agent-knowledge-cards) to stay in the loop as we ship.
 
 [![npm version](https://img.shields.io/npm/v/knowcards?style=flat-square)](https://www.npmjs.com/package/knowcards)
 [![npm](https://img.shields.io/npm/dm/knowcards?style=flat-square&logo=npm)](https://www.npmjs.com/package/knowcards)
+[![GitHub stars](https://img.shields.io/github/stars/manojbajaj95/agent-knowledge-cards?style=flat-square)](https://github.com/manojbajaj95/agent-knowledge-cards)
 [![Node](https://img.shields.io/badge/node-%3E%3D20-brightgreen?style=flat-square)](https://nodejs.org/)
 [![Claude Code](https://img.shields.io/badge/Claude%20Code-hooks-191919?style=flat-square)](https://code.claude.com/docs/en/hooks)
 [![Codex](https://img.shields.io/badge/Codex-hooks-412991?style=flat-square)](https://developers.openai.com/codex/hooks)
@@ -103,9 +106,39 @@ Do not propose plans or unverified guesses. Near-duplicates are fine; bookkeepin
 
 ## How it works
 
+A typical ReAct agent takes a user query, then reasons and acts in a loop, then gives a final answer. It does not read or write durable memory.
+
+```mermaid
+flowchart TB
+  Q[User query] --> R[Reason]
+  R -->|act| A[Act]
+  A -->|observation| R
+  R -->|done| F[Final answer]
 ```
-first prompt → retrieve → inject
-session stop → reflect follow-up → agent proposes cards
+
+Knowcards wraps that loop. After the user query, `fetch` asks memory for relevant chunks through `retrieve`. After the final answer, `reflect` writes new facts through `inject`. Memory is a black box in this view.
+
+```mermaid
+flowchart LR
+  subgraph H["Harness loop"]
+    direction TB
+    HQ[User query] --> HF[fetch]
+    HF --> HR[Reason]
+    HR -->|act| HA[Act]
+    HA -->|observation| HR
+    HR -->|done| HFA[Final answer]
+    HFA --> HREF[reflect]
+  end
+
+  subgraph M["Memory (black box)"]
+    direction TB
+    MR[retrieve]
+    MI[inject]
+  end
+
+  HF -->|ask| MR
+  MR -->|relevant chunks| HF
+  HREF -->|new facts| MI
 ```
 
 The `install` command wires Claude Code, Codex, or Cursor hooks. A prompt retrieves matching cards (MiniSearch) and injects titles. Use `query` or MCP for the full text. Stop continues the same session so the agent can propose. Cards are markdown under `.agents/knowledge_cards`. Knowcards does not bundle an LLM.
