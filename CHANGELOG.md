@@ -1,5 +1,17 @@
 # Changelog
 
+## [0.4.0](https://github.com/manojbajaj95/agent-knowledge-cards/compare/knowcards-v0.3.0...knowcards-v0.4.0) (2026-08-31)
+
+
+### Features
+
+* add Pi extension and split memory from harness ([22c8231](https://github.com/manojbajaj95/agent-knowledge-cards/commit/22c82318c79a3efca4238aa6755b37979c274bc3))
+
+
+### Bug Fixes
+
+* **pi:** run reflect on session_shutdown not agent_end ([a2b1ce0](https://github.com/manojbajaj95/agent-knowledge-cards/commit/a2b1ce057776b347b32d5602bb7955bbffe498fe))
+
 ## [0.3.0](https://github.com/manojbajaj95/agent-knowledge-cards/compare/knowcards-v0.2.0...knowcards-v0.3.0) (2026-08-20)
 
 
