@@ -67,7 +67,7 @@ export class FsCardStorage implements CardStorage {
           const raw = await readFile(join(notebookPath, file), "utf8");
           cards.push(parseCardMarkdown(slug, raw));
         } catch {
-          // Skip corrupt files so one bad card cannot blank inject/query.
+          // Skip corrupt files so one bad card cannot blank fetch/query.
         }
       }
       notebooks.push({ id: name, cards });

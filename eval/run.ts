@@ -1,5 +1,5 @@
 /**
- * Run Harbor A/B: same task with vs without knowcards (skill + CLI).
+ * Run Harbor A/B: same task with vs without knowcards (extension + CLI).
  *
  * Requires: `harbor` on PATH, Docker (or another Harbor env provider),
  * and API credentials for the chosen agent/model.
@@ -10,7 +10,7 @@
  *   bun run eval/run.ts -- --model openai/gpt-5.6-luna
  */
 import { mkdir } from "node:fs/promises";
-import { dirname, join, resolve } from "node:path";
+import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 import { compareJobDirs } from "./compare.ts";
 import { formatCompareReport } from "./metrics.ts";
@@ -31,7 +31,6 @@ export const DEFAULT_PI_VERSION = EVAL_PI_VERSION;
 /** Default model: GPT-5.6 Luna (Harbor/OpenAI id). */
 export const DEFAULT_EVAL_MODEL = "openai/gpt-5.6-luna";
 
-const KNOWCARDS_SKILL = resolve(EVAL_DIR, "..", "skills", "knowcards");
 const HARBOR_PI_BARE = "harbor_pi:PiBare";
 const HARBOR_PI_WITH = "harbor_pi:PiWithKnowcards";
 
@@ -148,8 +147,6 @@ async function harborRun(opts: {
       HARBOR_PI_WITH,
       "--ak",
       `version=${opts.piVersion}`,
-      "--skill",
-      KNOWCARDS_SKILL,
       "--mounts",
       JSON.stringify([
         {
@@ -275,7 +272,7 @@ async function main(): Promise<void> {
       `Agent/model: pi@${opts.piVersion} (@earendil-works) / ${opts.model ?? DEFAULT_EVAL_MODEL}`,
     );
     console.log(
-      "Arms: without-knowcards = PiBare; with-knowcards = PiWithKnowcards + skill + CLI",
+      "Arms: without-knowcards = PiBare; with-knowcards = PiWithKnowcards + extension + CLI",
     );
   }
 

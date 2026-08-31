@@ -21,12 +21,14 @@ One Harbor task package per instance. Instruction, env, and tests are the offici
 
 | Arm | Agent |
 |-----|--------|
-| without-knowcards | `harbor_pi:PiBare` at pinned version — no skills, no knowcards CLI, no seed cards in the image |
-| with-knowcards | `harbor_pi:PiWithKnowcards` + Harbor `--skill skills/knowcards` + packed `knowcards` CLI on PATH + seed cards mounted at `/testbed/.agents/knowledge_cards` |
+| without-knowcards | `harbor_pi:PiBare` at pinned version — no extension, no knowcards CLI, no seed cards in the image |
+| with-knowcards | `harbor_pi:PiWithKnowcards` + `knowcards install pi --global` + packed `knowcards` CLI on PATH + seed cards mounted at `/testbed/.agents/knowledge_cards` |
 
 Stock Harbor `pi` on 0.20.0 installs `@mariozechner/pi-coding-agent` (stops at 0.73.x). Our wrappers use `@earendil-works/pi-coding-agent@0.84.2` **baked into** each task Dockerfile on top of the SWE-bench base image. `harbor_pi.py` only verifies `pi` and installs `knowcards.tgz` on the with-arm. Keep Dockerfile `PI_VERSION` in sync with `EVAL_PI_VERSION` in `eval/prepare.ts`.
 
-No plugin. No MCP. No `AGENTS.md` hint. Prepare writes **exactly one** seed card per task to `seed_cards/` next to `environment/` (not inside the Docker build context). The with-arm mounts that dir; the without-arm cannot grep card files. Prepare also strips any `environment/.agents` or `AGENTS.md` and deletes stale `*-with-cards` / `*-without-cards` forks.
+No plugin beyond the Pi extension. No MCP. No `AGENTS.md` hint. Prepare writes **exactly one** seed card per task to `seed_cards/` next to `environment/` (not inside the Docker build context). The with-arm mounts that dir; the without-arm cannot grep card files. Prepare also strips any `environment/.agents` or `AGENTS.md` and deletes stale `*-with-cards` / `*-without-cards` forks.
+
+Harbor runs `pi --print --mode json`. The extension fetches card titles after the user query, then queues a reflect follow-up at session end (`session_shutdown`).
 
 SWE-bench images are `linux/amd64`. Docker on Apple Silicon runs them with emulation.
 

@@ -1,15 +1,17 @@
 /**
- * Shared inject/reflect runners. Host adapters only supply the envelope.
+ * Shared fetch/reflect runners. Host adapters only supply the envelope.
  */
+import { createHash } from "node:crypto";
 import { readFileSync } from "node:fs";
-import { mkdir, readFile, writeFile } from "node:fs/promises";
+import { mkdir, readFile, unlink, writeFile } from "node:fs/promises";
 import { join } from "node:path";
+import { fetchCards } from "../harness/fetch.ts";
 import {
   type HookState,
   loadHookState,
   saveHookState,
-} from "../lifecycle/hook-state.ts";
-import { onSessionPrompt, onSessionStop } from "../lifecycle/session.ts";
+} from "../harness/hook-state.ts";
+import { reflectFollowup } from "../harness/reflect.ts";
 import {
   parseStdinJson,
   pickBool,
@@ -27,56 +29,92 @@ function skipSlugsForSession(
   sessionId: string,
   state: HookState | null,
 ): string[] {
-  if (sessionId && state?.sessionId === sessionId) return state.injectedSlugs;
+  if (sessionId && state?.sessionId === sessionId) return state.fetchedSlugs;
   return [];
 }
 
-/** Skip reflect when the host already looped, or the transcript has no file edits. */
-export function shouldSkipReflect(payload: Record<string, unknown>): boolean {
-  if (pickBool(payload, ["stop_hook_active"])) return true;
-  const status = pickString(payload, ["status"]);
-  if (status && status !== "completed") return true;
-  if ((pickNumber(payload, ["loop_count"]) ?? 0) > 0) return true;
+function sessionIdFromPayload(payload: Record<string, unknown>): string {
+  return pickString(payload, ["session_id", "conversation_id"]) ?? "";
+}
+
+/** Stable id of file-edit tool names in a transcript. Empty = no edits. */
+export function mutationFingerprint(transcript: string): string {
+  const parts: string[] = [];
+  for (const m of transcript.matchAll(new RegExp(MUTATION_RE.source, "g"))) {
+    parts.push(`${m[0]}:${m.index}`);
+  }
+  if (parts.length === 0) return "";
+  return createHash("sha256")
+    .update(parts.join("|"))
+    .digest("hex")
+    .slice(0, 16);
+}
+
+function fingerprintFromPayload(
+  payload: Record<string, unknown>,
+): string | null {
   const transcript = pickString(payload, ["transcript_path", "transcriptPath"]);
-  if (!transcript) return false;
+  if (!transcript) return null;
   try {
-    return !MUTATION_RE.test(readFileSync(transcript, "utf8"));
+    return mutationFingerprint(readFileSync(transcript, "utf8"));
   } catch {
-    return false;
+    return null;
   }
 }
 
-export async function runAdditiveInject(
-  envelope: (inject: string) => unknown,
+/**
+ * Skip reflect when Stop already looped, there are no new file edits,
+ * or the mutation fingerprint matches the last extract for this session.
+ */
+export function shouldSkipReflect(
+  payload: Record<string, unknown>,
+  state: HookState | null = null,
+): boolean {
+  if (pickBool(payload, ["stop_hook_active"])) return true;
+  const status = pickString(payload, ["status"]);
+  if (status && status !== "completed") return true;
+  const fingerprint = fingerprintFromPayload(payload);
+  if (fingerprint === "") return true;
+  if (fingerprint == null) {
+    return (pickNumber(payload, ["loop_count"]) ?? 0) > 0;
+  }
+  const sessionId = sessionIdFromPayload(payload);
+  return (
+    state?.lastExtractFingerprint === fingerprint &&
+    (!sessionId || !state.sessionId || state.sessionId === sessionId)
+  );
+}
+
+export async function runAdditiveFetch(
+  envelope: (text: string) => unknown,
 ): Promise<void> {
   await withFailOpen(async () => {
     const payload = parseStdinJson<Record<string, unknown>>();
     const prompt =
       pickString(payload, ["prompt", "user_prompt", "content", "message"]) ??
       "";
-    const sessionId =
-      pickString(payload, ["session_id", "conversation_id"]) ?? "";
+    const sessionId = sessionIdFromPayload(payload);
     const state = await loadHookState();
     const skipSlugs = skipSlugsForSession(sessionId, state);
-    const inject = await onSessionPrompt(prompt, { skipSlugs });
-    if (!inject.text) {
+    const fetched = await fetchCards(prompt, { skipSlugs });
+    if (!fetched.text) {
       writeJson({});
       return;
     }
-    if (!sessionId && state?.lastInject === inject.text) {
+    if (!sessionId && state?.lastFetch === fetched.text) {
       writeJson({});
       return;
     }
     await saveHookState({
       sessionId: sessionId || state?.sessionId,
-      injectedSlugs: [...new Set([...skipSlugs, ...inject.slugs])],
-      lastInject: inject.text,
+      fetchedSlugs: [...new Set([...skipSlugs, ...fetched.slugs])],
+      lastFetch: fetched.text,
     });
-    writeJson(envelope(inject.text));
+    writeJson(envelope(fetched.text));
   });
 }
 
-export async function runCursorInject(): Promise<void> {
+export async function runCursorFetch(): Promise<void> {
   await withFailOpen(async () => {
     const payload = parseStdinJson<Record<string, unknown>>();
     const prompt =
@@ -87,21 +125,26 @@ export async function runCursorInject(): Promise<void> {
       writeJson({ continue: true });
       return;
     }
-    const inject = await onSessionPrompt(prompt);
-    if (!inject.text) {
+    const fetched = await fetchCards(prompt);
+    const outPath = join(process.cwd(), CURSOR_RULE_REL);
+    if (!fetched.text) {
+      try {
+        await unlink(outPath);
+      } catch {
+        // missing is fine
+      }
       writeJson({ continue: true });
       return;
     }
     const body = [
       "---",
-      "description: Knowcards trusted memory (auto-injected; do not edit by hand)",
+      "description: Knowcards trusted memory (auto-fetched; do not edit by hand)",
       "alwaysApply: true",
       "---",
       "",
-      inject.text,
+      fetched.text,
       "",
     ].join("\n");
-    const outPath = join(process.cwd(), CURSOR_RULE_REL);
     try {
       if ((await readFile(outPath, "utf8")) === body) {
         writeJson({ continue: true });
@@ -116,14 +159,23 @@ export async function runCursorInject(): Promise<void> {
   });
 }
 
-/** Null when Stop should not continue (already looped, no file edits, empty prompt). */
+/** Null when Stop should not continue (already looped, no new file edits, empty prompt). */
 export async function reflectFollowupFromPayload(
   payload: Record<string, unknown>,
 ): Promise<string | null> {
-  if (shouldSkipReflect(payload)) return null;
+  const state = await loadHookState();
+  if (shouldSkipReflect(payload, state)) return null;
   const cwd = pickString(payload, ["cwd"]) ?? process.cwd();
-  const followup = await onSessionStop(undefined, { cwd });
-  return followup || null;
+  const followup = await reflectFollowup(undefined, { cwd });
+  if (!followup) return null;
+  const fingerprint = fingerprintFromPayload(payload);
+  if (fingerprint) {
+    await saveHookState({
+      sessionId: sessionIdFromPayload(payload) || state?.sessionId,
+      lastExtractFingerprint: fingerprint,
+    });
+  }
+  return followup;
 }
 
 export async function runReflect(

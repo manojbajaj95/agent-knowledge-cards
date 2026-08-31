@@ -1,4 +1,23 @@
 export {
+  FETCH_CARD_CAP,
+  FETCH_CHAR_CAP,
+  FETCH_DRILLDOWN,
+  type FetchCardsOptions,
+  type FetchCardsResult,
+  fetchCards,
+  formatCardsForFetch,
+  KNOWLEDGE_CARDS_HEADER,
+  slugsFromFetch,
+  TRUST_REMINDER,
+} from "./harness/fetch.ts";
+export {
+  formatReflectFollowup,
+  loadReflectPrompt,
+  REFLECT_FOLLOWUP_TITLE,
+  type ReflectFollowupOptions,
+  reflectFollowup,
+} from "./harness/reflect.ts";
+export {
   type DeleteCardResult,
   deleteCard,
   type ProposeCardInput,
@@ -7,27 +26,26 @@ export {
   type UpdateCardInput,
   type UpdateCardResult,
   updateCard,
-} from "./core/ingestion.ts";
+} from "./memory/ingestion.ts";
+export { parseCardMarkdown, serializeCardMarkdown } from "./memory/markdown.ts";
 export {
-  formatCardsForInject,
-  INJECT_DRILLDOWN,
-  KNOWLEDGE_CARDS_HEADER,
-  slugsFromInject,
-  TRUST_REMINDER,
-} from "./core/inject.ts";
-export { parseCardMarkdown, serializeCardMarkdown } from "./core/markdown.ts";
-export {
-  formatReflectFollowup,
-  loadReflectPrompt,
-} from "./core/reflection.ts";
-export { getCard, queryCards, queryLibrary } from "./core/retrieval.ts";
-export { slugify } from "./core/slug.ts";
+  deleteCardOp,
+  type InitResult,
+  initCards,
+  proposeCardOp,
+  queryCardsOp,
+  type StatusResult,
+  statusCards,
+  updateCardOp,
+} from "./memory/ops.ts";
+export { getCard, queryCards, queryLibrary } from "./memory/retrieval.ts";
+export { slugify } from "./memory/slug.ts";
 export {
   type CardStorage,
   FsCardStorage,
   openLibrary,
   requireNotebook,
-} from "./core/storage.ts";
+} from "./memory/storage.ts";
 export {
   allCards,
   DEFAULT_CARDS_ROOT,
@@ -39,13 +57,4 @@ export {
   type KnowledgeLibrary,
   type Notebook,
   withNotebook,
-} from "./core/types/index.ts";
-export {
-  INJECT_CARD_CAP,
-  INJECT_CHAR_CAP,
-  onSessionPrompt,
-  onSessionStop,
-  type SessionPromptOptions,
-  type SessionPromptResult,
-  type SessionStopOptions,
-} from "./lifecycle/session.ts";
+} from "./memory/types/index.ts";

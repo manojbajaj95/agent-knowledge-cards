@@ -3,18 +3,24 @@ import { mkdir, mkdtemp, rm, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import {
+  mutationFingerprint,
   reflectFollowupFromPayload,
   shouldSkipReflect,
 } from "../src/adapters/run.ts";
-import { deleteCard, proposeCard, updateCard } from "../src/core/ingestion.ts";
-import { formatCardsForInject, slugsFromInject } from "../src/core/inject.ts";
-import { queryLibrary } from "../src/core/retrieval.ts";
-import { openLibrary } from "../src/core/storage.ts";
 import {
-  INJECT_CARD_CAP,
-  INJECT_CHAR_CAP,
-  onSessionPrompt,
-} from "../src/lifecycle/session.ts";
+  FETCH_CARD_CAP,
+  FETCH_CHAR_CAP,
+  fetchCards,
+  formatCardsForFetch,
+  slugsFromFetch,
+} from "../src/harness/fetch.ts";
+import {
+  deleteCard,
+  proposeCard,
+  updateCard,
+} from "../src/memory/ingestion.ts";
+import { queryLibrary } from "../src/memory/retrieval.ts";
+import { openLibrary } from "../src/memory/storage.ts";
 
 const SAMPLE = "eval/fixtures/sample-library";
 
@@ -30,17 +36,17 @@ ${body}
 `;
 }
 
-describe("retrieve and inject", () => {
+describe("retrieve and fetch", () => {
   const temps: string[] = [];
 
   afterEach(async () => {
     await Promise.all(temps.splice(0).map((d) => rm(d, { recursive: true })));
   });
 
-  test("empty prompt injects nothing", async () => {
-    const inject = await onSessionPrompt("  ", { root: SAMPLE });
-    expect(inject.text).toBe("");
-    expect(inject.slugs).toEqual([]);
+  test("empty prompt fetches nothing", async () => {
+    const fetched = await fetchCards("  ", { root: SAMPLE });
+    expect(fetched.text).toBe("");
+    expect(fetched.slugs).toEqual([]);
   });
 
   test("payments query ranks integer-cents first", async () => {
@@ -60,21 +66,21 @@ describe("retrieve and inject", () => {
     expect(library.notebooks[0]?.cards.map((c) => c.slug)).toEqual(["good"]);
   });
 
-  test("onSessionPrompt caps inject hits", async () => {
+  test("fetchCards caps fetch hits", async () => {
     const root = await mkdtemp(join(tmpdir(), "kc-cap-"));
     temps.push(root);
     const dir = join(root, "default");
     await mkdir(dir, { recursive: true });
-    for (let i = 0; i < INJECT_CARD_CAP + 4; i++) {
+    for (let i = 0; i < FETCH_CARD_CAP + 4; i++) {
       await writeFile(
         join(dir, `alpha-fact-${i}.md`),
         cardMd(`Alpha fact ${i}`, "alpha retrieval token"),
       );
     }
-    const inject = await onSessionPrompt("alpha", { root });
-    const hits = [...inject.text.matchAll(/^\[\d+\] /gm)];
-    expect(hits).toHaveLength(INJECT_CARD_CAP);
-    expect(inject.slugs).toHaveLength(INJECT_CARD_CAP);
+    const fetched = await fetchCards("alpha", { root });
+    const hits = [...fetched.text.matchAll(/^\[\d+\] /gm)];
+    expect(hits).toHaveLength(FETCH_CARD_CAP);
+    expect(fetched.slugs).toHaveLength(FETCH_CARD_CAP);
   });
 
   test("short query still prefix-matches", async () => {
@@ -113,48 +119,48 @@ describe("retrieve and inject", () => {
     expect(cards.map((c) => c.slug)).toEqual(["retrieve-ranking"]);
   });
 
-  test("onSessionPrompt drops cards to stay under char cap", async () => {
+  test("fetchCards drops cards to stay under char cap", async () => {
     const root = await mkdtemp(join(tmpdir(), "kc-chars-"));
     temps.push(root);
     const dir = join(root, "default");
     await mkdir(dir, { recursive: true });
     const titlePad = "x".repeat(2000);
-    for (let i = 0; i < INJECT_CARD_CAP; i++) {
+    for (let i = 0; i < FETCH_CARD_CAP; i++) {
       await writeFile(
         join(dir, `token-fact-${i}.md`),
         cardMd(`Token fact ${i} ${titlePad}`, "token fact body"),
       );
     }
-    const inject = await onSessionPrompt("token fact", { root });
-    expect(inject.text.length).toBeLessThanOrEqual(INJECT_CHAR_CAP);
-    expect(inject.text).toContain("[1] (token-fact-0)");
+    const fetched = await fetchCards("token fact", { root });
+    expect(fetched.text.length).toBeLessThanOrEqual(FETCH_CHAR_CAP);
+    expect(fetched.text).toContain("[1] (token-fact-0)");
   });
 
-  test("formatCardsForInject is title-first", () => {
-    const text = formatCardsForInject([
+  test("formatCardsForFetch is title-first", () => {
+    const text = formatCardsForFetch([
       {
         id: "1",
         title: "Visible title",
         slug: "visible-title",
         createdAt: "2026-08-01T00:00:00.000Z",
         updatedAt: "2026-08-01T00:00:00.000Z",
-        useWhen: "debugging inject",
+        useWhen: "debugging fetch",
         body: "SECRET BODY MUST NOT APPEAR",
       },
     ]);
     expect(text).toContain("Visible title");
-    expect(text).toContain("Use when: debugging inject");
+    expect(text).toContain("Use when: debugging fetch");
     expect(text).not.toContain("SECRET BODY MUST NOT APPEAR");
-    expect(slugsFromInject(text)).toEqual(["visible-title"]);
+    expect(slugsFromFetch(text)).toEqual(["visible-title"]);
   });
 
-  test("onSessionPrompt skips already injected slugs", async () => {
-    const inject = await onSessionPrompt("payments", {
+  test("fetchCards skips already fetched slugs", async () => {
+    const fetched = await fetchCards("payments", {
       root: SAMPLE,
       skipSlugs: ["integer-cents"],
     });
-    expect(inject.text).not.toContain("(integer-cents)");
-    expect(inject.slugs).not.toContain("integer-cents");
+    expect(fetched.text).not.toContain("(integer-cents)");
+    expect(fetched.slugs).not.toContain("integer-cents");
   });
 
   test("shouldSkipReflect when transcript has no file edits", async () => {
@@ -173,6 +179,33 @@ describe("retrieve and inject", () => {
     const path = join(dir, "t.jsonl");
     await writeFile(path, '{"message":{"content":[{"name":"Write"}]}}\n');
     expect(shouldSkipReflect({ transcript_path: path })).toBe(false);
+    expect(
+      shouldSkipReflect(
+        { transcript_path: path, loop_count: 1, session_id: "s1" },
+        { fetchedSlugs: [], lastExtractFingerprint: "old" },
+      ),
+    ).toBe(false);
+  });
+
+  test("shouldSkipReflect when mutation fingerprint matches last extract", async () => {
+    const dir = await mkdtemp(join(tmpdir(), "kc-txfp-"));
+    temps.push(dir);
+    const path = join(dir, "t.jsonl");
+    const text = '{"message":{"content":[{"name":"Write"}]}}\n';
+    await writeFile(path, text);
+    const fp = mutationFingerprint(text);
+    expect(
+      shouldSkipReflect(
+        { transcript_path: path, session_id: "s1" },
+        { fetchedSlugs: [], sessionId: "s1", lastExtractFingerprint: fp },
+      ),
+    ).toBe(true);
+    expect(
+      shouldSkipReflect(
+        { transcript_path: path, session_id: "s2" },
+        { fetchedSlugs: [], sessionId: "s1", lastExtractFingerprint: fp },
+      ),
+    ).toBe(false);
   });
 
   test("reflectFollowupFromPayload is null when Stop already looped", async () => {

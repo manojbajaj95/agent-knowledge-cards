@@ -18,7 +18,7 @@ I will acknowledge the report when I can and work with you on a fix and disclosu
 
 ## Scope
 
-Knowcards is a local CLI and host hooks. It writes markdown under `.agents/knowledge_cards` and injects matching cards into the coding agent. It does not run a network service.
+Knowcards is a local CLI and host hooks. It writes markdown under `.agents/knowledge_cards` and fetches matching cards into the coding agent. It does not run a network service.
 
 In scope: the published `knowcards` package (CLI, MCP, hooks) and unexpected file writes or command execution from this code.
 

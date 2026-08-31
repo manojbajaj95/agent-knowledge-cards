@@ -7,7 +7,7 @@
  * cards/<notebook-id>/*.md
  *
  * Each template becomes one Harbor task (same instruction/env/tests for both
- * arms). Arms differ only at harbor-run time (bare Pi vs Pi + skill + CLI).
+ * arms). Arms differ only at harbor-run time (bare Pi vs Pi + extension + CLI).
  * Prepare appends a Node+Pi bake to the official Dockerfile and sets
  * skills_dir. Seed cards land in seed_cards/ (outside environment/) so they
  * are not in the Docker image. Each task keeps exactly one seed card. The
@@ -28,8 +28,8 @@ import {
 } from "node:fs/promises";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
-import { openLibrary } from "../src/core/storage.ts";
-import { allCards, type KnowledgeCard } from "../src/core/types/index.ts";
+import { openLibrary } from "../src/memory/storage.ts";
+import { allCards, type KnowledgeCard } from "../src/memory/types/index.ts";
 
 const EVAL_DIR = dirname(fileURLToPath(import.meta.url));
 const REPO_ROOT = dirname(EVAL_DIR);

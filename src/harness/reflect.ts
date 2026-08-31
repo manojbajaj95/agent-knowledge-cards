@@ -4,6 +4,10 @@ import { fileURLToPath } from "node:url";
 
 const OVERRIDE_FILENAME = "REFLECT.md";
 
+/** First line of the Stop follow-up. Hosts skip fetch when the prompt is this turn. */
+export const REFLECT_FOLLOWUP_TITLE =
+  "KNOWLEDGE CARDS — end-of-session reflection";
+
 const MISSING_PACKAGED =
   "Propose at most 2 durable cards with `npx knowcards propose`. Default is skip.";
 
@@ -41,7 +45,7 @@ async function loadPackagedDefault(): Promise<string> {
  */
 export function formatReflectFollowup(reflectPrompt: string): string {
   return [
-    "KNOWLEDGE CARDS — end-of-session reflection",
+    REFLECT_FOLLOWUP_TITLE,
     "",
     "Default is skip. Propose at most 2 cards that later sessions will reuse.",
     "Use `npx knowcards propose` (or the knowcards MCP `propose` tool).",
@@ -51,4 +55,25 @@ export function formatReflectFollowup(reflectPrompt: string): string {
     reflectPrompt.trim(),
     "--- end guidance ---",
   ].join("\n");
+}
+
+export type ReflectFollowupOptions = {
+  /** Project cwd — used to load `REFLECT.md` override. */
+  cwd?: string;
+  root?: string;
+};
+
+/**
+ * Return the reflection follow-up for the primary agent.
+ * Does not call an LLM or write cards.
+ */
+export async function reflectFollowup(
+  _episodeText?: string,
+  rootOrOptions: string | ReflectFollowupOptions = {},
+): Promise<string> {
+  const options: ReflectFollowupOptions =
+    typeof rootOrOptions === "string" ? { root: rootOrOptions } : rootOrOptions;
+  const cwd = options.cwd ?? process.cwd();
+  const prompt = await loadReflectPrompt(cwd);
+  return formatReflectFollowup(prompt);
 }

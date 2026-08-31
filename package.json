@@ -1,7 +1,7 @@
 {
   "name": "knowcards",
   "version": "0.3.0",
-  "description": "Filesystem-first knowledge cards for coding agents — durable facts reinjected as trusted memory",
+  "description": "Filesystem-first knowledge cards for coding agents — durable facts fetched as trusted memory",
   "license": "MIT",
   "type": "module",
   "main": "./dist/index.js",
@@ -12,11 +12,12 @@
       "import": "./dist/index.js",
       "default": "./dist/index.js"
     },
-    "./adapters/claude-code-inject": "./dist/adapters/claude-code-inject.js",
+    "./adapters/claude-code-fetch": "./dist/adapters/claude-code-fetch.js",
     "./adapters/claude-code-reflect": "./dist/adapters/claude-code-reflect.js",
-    "./adapters/cursor-inject": "./dist/adapters/cursor-inject.js",
+    "./adapters/cursor-fetch": "./dist/adapters/cursor-fetch.js",
     "./adapters/cursor-reflect": "./dist/adapters/cursor-reflect.js",
-    "./adapters/codex-inject": "./dist/adapters/codex-inject.js",
+    "./adapters/pi": "./dist/adapters/pi.js",
+    "./adapters/codex-fetch": "./dist/adapters/codex-fetch.js",
     "./adapters/codex-reflect": "./dist/adapters/codex-reflect.js"
   },
   "bin": {
@@ -54,7 +55,7 @@
   "scripts": {
     "knowcards": "bun run src/cli/index.ts",
     "mcp": "bun run src/cli/index.ts mcp",
-    "build": "tsc -p tsconfig.build.json && mkdir -p dist/core/prompts && cp src/core/prompts/default-reflect.md dist/core/prompts/",
+    "build": "tsc -p tsconfig.build.json && mkdir -p dist/harness/prompts && cp src/harness/prompts/default-reflect.md dist/harness/prompts/",
     "prepublishOnly": "bun run build",
     "test": "bun test tests",
     "typecheck": "tsc --noEmit",
