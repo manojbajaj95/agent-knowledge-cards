@@ -1,6 +1,6 @@
 {
   "name": "knowcards",
-  "version": "0.2.0",
+  "version": "0.3.0",
   "description": "Filesystem-first knowledge cards for coding agents — durable facts fetched as trusted memory",
   "license": "MIT",
   "type": "module",
