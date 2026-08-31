@@ -142,7 +142,7 @@ flowchart LR
   HREF -->|new facts| MS
 ```
 
-The `install` command wires Claude Code, Codex, or Cursor hooks, or a Pi extension. A prompt retrieves matching cards (MiniSearch) and fetches titles into context. Use `query` or MCP for the full text. After the final answer, Stop (or Pi `agent_end`) continues the same session so the agent can propose. Cards are markdown under `.agents/knowledge_cards`. Knowcards does not bundle an LLM.
+The `install` command wires Claude Code, Codex, or Cursor hooks, or a Pi extension. A prompt retrieves matching cards (MiniSearch) and fetches titles into context. Use `query` or MCP for the full text. Reflect continues the same session so the agent can propose: Stop on Claude Code / Cursor / Codex, `session_shutdown` on Pi. Cards are markdown under `.agents/knowledge_cards`. Knowcards does not bundle an LLM.
 
 - `src/memory/` — save, store, retrieve
 - `src/harness/` — fetch + reflect

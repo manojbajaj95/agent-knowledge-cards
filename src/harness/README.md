@@ -10,4 +10,4 @@ Session API: fetch on prompt, reflect follow-up on stop. Memory stays host-agnos
 
 Adapters must not import `src/memory`. They call this API and wrap host JSON.
 
-Wire hosts with `npx knowcards install <claude-code|cursor|codex|pi>`. Claude Code Stop is `async` + `asyncRewake` (same session after the turn ends). Cursor and Codex Stop stay synchronous continuations. Pi reflects on `agent_end` (follow-up after the final answer, including print/JSON).
+Wire hosts with `npx knowcards install <claude-code|cursor|codex|pi>`. Claude Code Stop is `async` + `asyncRewake` (same session after the turn ends). Cursor and Codex Stop stay synchronous continuations. Pi reflects on `session_shutdown` (follow-up at session end, including print/JSON).

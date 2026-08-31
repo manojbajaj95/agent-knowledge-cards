@@ -40,7 +40,7 @@ Details: [`eval/README.md`](eval/README.md).
 Contributors are welcome. You can help in these ways:
 
 - **Hypotheses**: Open an issue that names one knob, the A/B arms, and a cite when you have one.
-- **Plugins / harness**: Wire hosts in `src/adapters/` (hook envelopes or the Pi extension) or `src/mcp/`. Keep `src/memory` free of host SDKs (Cursor, MCP, Pi). Adapters must not import `src/memory`. Fetch wording lives in `src/harness/fetch.ts`. Install with `knowcards install <host>` only — do not add a `hook` CLI. Keep fetch hooks synchronous. Claude Code Stop may use `asyncRewake`; do not set `async` on Cursor or Codex Stop. Pi reflects on `agent_end` (follow-up after the final answer).
+- **Plugins / harness**: Wire hosts in `src/adapters/` (hook envelopes or the Pi extension) or `src/mcp/`. Keep `src/memory` free of host SDKs (Cursor, MCP, Pi). Adapters must not import `src/memory`. Fetch wording lives in `src/harness/fetch.ts`. Install with `knowcards install <host>` only — do not add a `hook` CLI. Keep fetch hooks synchronous. Claude Code Stop may use `asyncRewake`; do not set `async` on Cursor or Codex Stop. Pi reflects on `session_shutdown` (follow-up at session end).
 - **Task families**: Add Harbor tasks under `eval/templates/` so the eval suite can test more memory questions.
 
 Eval uses Harbor. Pin harness versions. Log which knob you changed. Product shape is in [`README.md`](README.md#how-it-works).

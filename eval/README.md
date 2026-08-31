@@ -28,7 +28,7 @@ Stock Harbor `pi` on 0.20.0 installs `@mariozechner/pi-coding-agent` (stops at 0
 
 No plugin beyond the Pi extension. No MCP. No `AGENTS.md` hint. Prepare writes **exactly one** seed card per task to `seed_cards/` next to `environment/` (not inside the Docker build context). The with-arm mounts that dir; the without-arm cannot grep card files. Prepare also strips any `environment/.agents` or `AGENTS.md` and deletes stale `*-with-cards` / `*-without-cards` forks.
 
-Harbor runs `pi --print --mode json`. The extension fetches card titles after the user query, then queues a reflect follow-up after the final answer (`agent_end`).
+Harbor runs `pi --print --mode json`. The extension fetches card titles after the user query, then queues a reflect follow-up at session end (`session_shutdown`).
 
 SWE-bench images are `linux/amd64`. Docker on Apple Silicon runs them with emulation.
 

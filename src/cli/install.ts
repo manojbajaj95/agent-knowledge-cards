@@ -256,7 +256,7 @@ export async function installHost(
         "Fetch appends titles to the system prompt on before_agent_start",
       );
       notes.push(
-        "Reflect follow-up runs on agent_end after write/edit (after the final answer)",
+        "Reflect follow-up runs on session_shutdown after write/edit (session end)",
       );
       break;
     default: {
