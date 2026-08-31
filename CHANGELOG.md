@@ -1,5 +1,17 @@
 # Changelog
 
+## [0.4.0](https://github.com/manojbajaj95/agent-knowledge-cards/compare/knowcards-v0.3.0...knowcards-v0.4.0) (2026-08-31)
+
+### Highlights
+- Added Pi support with automatic knowledge-card fetching before agent startup and reflection at session shutdown—not after every turn.
+- Install the Pi extension per project with `npx knowcards install pi` or globally with `npx knowcards install pi --global`.
+- Pi print/JSON sessions also run the reflection step before exiting.
+
+### Improvements
+- Updated documentation to explain the fetch/reflect workflow across Pi, Claude Code, Cursor, and Codex.
+- Renamed public host adapter entry points from `*-inject` to `*-fetch` and added a Pi adapter export.
+- Separated card storage and persistence from the session fetch/reflect harness for clearer library integration.
+
 ## [0.3.0](https://github.com/manojbajaj95/agent-knowledge-cards/compare/knowcards-v0.2.0...knowcards-v0.3.0) (2026-08-20)
 
 
